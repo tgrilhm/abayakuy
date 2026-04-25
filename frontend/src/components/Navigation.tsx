@@ -35,7 +35,7 @@ export const StorefrontHeader: React.FC<NavigationProps> = ({ setView }) => {
           onClick={() => setView('storefront')}
           className="text-2xl font-bold tracking-[0.3em] font-lexend text-primary"
         >
-          ELÉGANCE
+          ABAYAKUY
         </button>
 
         <div className="flex gap-6 items-center">

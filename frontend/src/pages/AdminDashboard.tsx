@@ -372,7 +372,7 @@ export const AdminProductList: React.FC<AdminProductListProps> = ({ products, lo
                     <input
                       type="text"
                       required
-                      placeholder="e.g. Elégance"
+                      placeholder="e.g. ABAYAKUY"
                       value={formData.brand}
                       onChange={(e) => setFormData(prev => ({ ...prev, brand: e.target.value }))}
                       className="w-full border-b border-surface-variant py-2 bg-transparent text-sm focus:outline-none focus:border-primary"

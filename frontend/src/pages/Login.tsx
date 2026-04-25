@@ -58,8 +58,8 @@ export const Login: React.FC<LoginProps> = ({ onLogin, onBack }) => {
             >
               ← Back to store
             </button>
-            <h1 className="text-4xl font-bold tracking-[0.2em] text-primary mb-4">ELÉGANCE</h1>
-            <p className="uppercase-label text-on-surface-variant">Admin Portal</p>
+            <h1 className="text-4xl font-bold tracking-[0.2em] text-primary mb-4">ABAYAKUY</h1>
+            <p className="uppercase-label text-on-surface-variant">Jastip Abaya Mesir</p>
           </header>
 
           <form className="space-y-8" onSubmit={handleSubmit}>

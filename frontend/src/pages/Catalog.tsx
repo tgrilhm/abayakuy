@@ -37,25 +37,26 @@ export const Catalog: React.FC<CatalogProps> = ({ products, loading, onProductCl
     );
   }
 
-  // Helper to get the first image URL from media array
   const getImageUrl = (product: Product) => {
-    const imageMedia = product.media?.find(m => m.type === 'image');
+    const imageMedia = product.media?.find((m) => m.type === 'image');
     return imageMedia?.url || '';
   };
 
   return (
     <div className="pt-[100px] pb-20">
-      {/* Hero Product */}
       {heroProduct && (
         <section className="max-w-[1440px] mx-auto px-6 md:px-12 mb-20">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
-            <div className="lg:col-span-7 aspect-[4/5] bg-surface-highest overflow-hidden relative group cursor-pointer" onClick={() => onProductClick(heroProduct)}>
+            <div
+              className="lg:col-span-7 aspect-[4/5] bg-surface-highest overflow-hidden relative group cursor-pointer"
+              onClick={() => onProductClick(heroProduct)}
+            >
               <motion.img
                 initial={{ scale: 1.1 }}
                 animate={{ scale: 1 }}
                 transition={{ duration: 1.5 }}
                 src={getImageUrl(heroProduct)}
-                alt={heroProduct.kode}
+                alt={heroProduct.kode || 'Product image'}
                 className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
               />
               <div className="absolute inset-0 bg-black/5 group-hover:bg-transparent transition-colors" />
@@ -90,7 +91,6 @@ export const Catalog: React.FC<CatalogProps> = ({ products, loading, onProductCl
         </section>
       )}
 
-      {/* Grid Collection */}
       <section className="max-w-[1440px] mx-auto px-6 md:px-12">
         <div className="flex justify-between items-end mb-12 border-t border-surface-high pt-12">
           <h2 className="text-3xl font-light">Explore Collection</h2>
@@ -133,9 +133,8 @@ export const Catalog: React.FC<CatalogProps> = ({ products, loading, onProductCl
         </div>
       </section>
 
-      {/* Footer Branding */}
       <footer className="mt-40 pt-20 pb-12 border-t border-surface-high text-center">
-        <h2 className="text-6xl font-bold tracking-[0.4em] opacity-5 mb-12">ELÉGANCE</h2>
+        <h2 className="text-6xl font-bold tracking-[0.4em] opacity-5 mb-12">ABAYAKUY</h2>
         <div className="flex justify-center gap-8 text-[10px] uppercase tracking-widest text-on-surface-variant mb-12">
           <a href="#" className="hover:text-primary transition-colors">Terms</a>
           <a href="#" className="hover:text-primary transition-colors">Privacy</a>
@@ -143,7 +142,7 @@ export const Catalog: React.FC<CatalogProps> = ({ products, loading, onProductCl
           <a href="#" className="hover:text-primary transition-colors">Contact</a>
         </div>
         <p className="uppercase-label text-[9px] text-on-surface-variant/60">
-          © {new Date().getFullYear()} ELÉGANCE ABAYA. ALL RIGHTS RESERVED.
+          © {new Date().getFullYear()} ABAYAKUY. JASTIP ABAYA MESIR.
         </p>
       </footer>
     </div>
