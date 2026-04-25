@@ -41,6 +41,9 @@ document.addEventListener('DOMContentLoaded', () => {
   
   const currentImageContainer = document.getElementById('currentImageContainer');
   const currentImagePreview = document.getElementById('currentImagePreview');
+  const imagePreviewModal = document.getElementById('imagePreviewModal');
+  const imagePreviewLarge = document.getElementById('imagePreviewLarge');
+  const closeImagePreviewBtn = document.getElementById('closeImagePreviewBtn');
 
   // Stats elements
   const totalProductsEl = document.getElementById('totalProducts');
@@ -132,6 +135,10 @@ document.addEventListener('DOMContentLoaded', () => {
     document.querySelectorAll('.action-btn.delete').forEach(btn => {
       btn.addEventListener('click', (e) => handleDelete(e.currentTarget.dataset.id));
     });
+
+    document.querySelectorAll('.product-img-thumb').forEach(img => {
+      img.addEventListener('click', () => openImagePreview(img.src, img.alt));
+    });
   };
 
   // Search
@@ -181,6 +188,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const closeModal = () => {
     productModal.classList.add('hidden');
+  };
+
+  const openImagePreview = (src, alt) => {
+    imagePreviewLarge.src = src;
+    imagePreviewLarge.alt = alt;
+    imagePreviewModal.classList.remove('hidden');
+  };
+
+  const closeImagePreview = () => {
+    imagePreviewModal.classList.add('hidden');
+    imagePreviewLarge.src = '';
   };
 
   // Form Submit
@@ -244,16 +262,24 @@ document.addEventListener('DOMContentLoaded', () => {
   openModalBtn.addEventListener('click', openModal);
   closeModalBtn.addEventListener('click', closeModal);
   cancelBtn.addEventListener('click', closeModal);
+  closeImagePreviewBtn.addEventListener('click', closeImagePreview);
 
   // Close modal when clicking outside
   productModal.addEventListener('click', (e) => {
     if (e.target === productModal) closeModal();
   });
 
+  imagePreviewModal.addEventListener('click', (e) => {
+    if (e.target === imagePreviewModal) closeImagePreview();
+  });
+
   // ESC key to close modal
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape' && !productModal.classList.contains('hidden')) {
       closeModal();
+    }
+    if (e.key === 'Escape' && !imagePreviewModal.classList.contains('hidden')) {
+      closeImagePreview();
     }
   });
 
