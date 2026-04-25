@@ -1,0 +1,61 @@
+@import url('https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;500;700&family=Noto+Serif:ital,wght@0,400;0,700;1,400&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Lexend", ui-sans-serif, system-ui, sans-serif;
+  --font-serif: "Noto Serif", ui-serif, Georgia, serif;
+
+  /* Modest Editorial Palette */
+  --color-surface-lowest: #ffffff;
+  --color-surface-low: #f3f3f4;
+  --color-surface: #f9f9f9;
+  --color-surface-high: #e8e8e8;
+  --color-surface-highest: #e2e2e2;
+  
+  --color-on-surface: #1a1c1c;
+  --color-on-surface-variant: #444748;
+  
+  --color-primary: #000000;
+  --color-on-primary: #ffffff;
+  
+  --color-accent: #77555d; /* Secondary Blush */
+  --color-accent-container: #ffd1db;
+  --color-on-accent-container: #7a585f;
+
+  --color-outline: #747878;
+  --color-outline-variant: #c4c7c7;
+
+  --radius-none: 0;
+  --radius-sm: 0;
+  --radius-md: 0;
+  --radius-lg: 0;
+  --radius-xl: 0;
+  --radius-2xl: 0;
+  --radius-3xl: 0;
+  --radius-full: 9999px;
+}
+
+@layer base {
+  body {
+    @apply bg-surface text-on-surface font-serif antialiased;
+  }
+  
+  h1, h2, h3, h4, h5, h6, .font-lexend {
+    @apply font-sans tracking-tight;
+  }
+
+  .uppercase-label {
+    @apply font-sans text-[10px] sm:text-xs font-medium uppercase tracking-[0.2em];
+  }
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  @apply bg-outline-variant rounded-full;
+}
