@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login - Abaya Catalog</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+  <!-- Animated Background -->
+  <div class="bg-animated">
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+    <div class="orb orb-3"></div>
+  </div>
+
+  <div class="page-content flex-center">
+    <div class="login-wrapper">
+      <div class="glass-card login-card animate-fade-in">
+        <!-- Logo / Icon -->
+        <div class="login-logo">
+          🏷️
+        </div>
+
+        <div class="text-center mb-3">
+          <h1 class="text-gradient">Welcome Back</h1>
+          <p class="login-subtitle">Sign in to manage your product catalog</p>
+        </div>
+        
+        <form id="loginForm" class="flex-col gap-1">
+          <div class="input-group">
+            <label for="username">Username</label>
+            <div class="input-wrapper">
+              <input type="text" id="username" name="username" required placeholder="Enter your username" autocomplete="username">
+              <span class="input-icon">👤</span>
+            </div>
+          </div>
+          
+          <div class="input-group">
+            <label for="password">Password</label>
+            <div class="input-wrapper">
+              <input type="password" id="password" name="password" required placeholder="Enter your password" autocomplete="current-password">
+              <span class="input-icon">🔒</span>
+            </div>
+          </div>
+          
+          <div id="errorMessage" class="error-text hidden"></div>
+          
+          <button type="submit" class="btn btn-primary w-100 mt-1" id="loginBtn">
+            <span>Sign In</span>
+            <div class="spinner hidden" id="loginSpinner"></div>
+          </button>
+        </form>
+      </div>
+
+      <p class="text-center text-muted mt-2" style="font-size: 0.8rem; opacity: 0.5;">
+        Private Catalog System &bull; Admin Access Only
+      </p>
+    </div>
+  </div>
+
+  <script type="module" src="/js/login.js"></script>
+</body>
+</html>

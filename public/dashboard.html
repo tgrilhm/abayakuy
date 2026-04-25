@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard - Abaya Catalog</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+  <!-- Animated Background -->
+  <div class="bg-animated">
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+    <div class="orb orb-3"></div>
+  </div>
+
+  <div class="page-content">
+    <!-- Navbar -->
+    <nav class="navbar">
+      <div class="nav-content container">
+        <div class="nav-brand">
+          <div class="nav-brand-icon">🏷️</div>
+          <h2 class="text-gradient m-0">Catalog</h2>
+        </div>
+        <button id="logoutBtn" class="btn btn-outline-danger btn-sm">Logout</button>
+      </div>
+    </nav>
+
+    <main class="container mt-2 animate-fade-in">
+      <!-- Stats Bar -->
+      <div class="stats-bar" id="statsBar">
+        <div class="stat-card">
+          <div class="stat-value text-gradient" id="totalProducts">0</div>
+          <div class="stat-label">Total Products</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value text-gradient-warm" id="totalBrands">0</div>
+          <div class="stat-label">Brands</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" style="color: var(--success);" id="latestProduct">—</div>
+          <div class="stat-label">Latest Added</div>
+        </div>
+      </div>
+
+      <!-- Table Section -->
+      <div class="glass-panel animate-scale-in">
+        <div class="table-header">
+          <h4>All Products</h4>
+          <div class="flex-row gap-1 align-center flex-wrap">
+            <div class="search-box">
+              <input type="search" id="searchInput" placeholder="Search products...">
+            </div>
+            <button id="openModalBtn" class="btn btn-primary btn-sm">+ Add Product</button>
+          </div>
+        </div>
+
+        <div class="table-container" id="tableWrapper">
+          <table class="data-table w-100" id="productsTable">
+            <thead>
+              <tr>
+                <th>Image</th>
+                <th>Code</th>
+                <th>Name</th>
+                <th>Brand</th>
+                <th>Size</th>
+                <th>Price</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="productsBody">
+              <!-- Rows injected by JS -->
+            </tbody>
+          </table>
+        </div>
+
+        <div id="emptyState" class="empty-state hidden">
+          <span class="empty-state-icon">📦</span>
+          <p>No products found. Click <strong>+ Add Product</strong> to get started!</p>
+        </div>
+        <div id="loadingState" class="empty-state">
+          <div class="spinner spinner-lg"></div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Toast container -->
+  <div class="toast-container" id="toastContainer"></div>
+
+  <!-- Add/Edit Product Modal -->
+  <div id="productModal" class="modal-overlay hidden">
+    <div class="modal-content glass-card animate-slide-up">
+      <div class="modal-header">
+        <h3 id="modalTitle">Add Product</h3>
+        <button id="closeModalBtn" class="icon-btn">&times;</button>
+      </div>
+      <form id="productForm" class="flex-col gap-1">
+        <input type="hidden" id="productId">
+        
+        <div class="grid-2">
+          <div class="input-group">
+            <label for="code">Product Code</label>
+            <input type="text" id="code" name="code" required placeholder="e.g. AB-001">
+          </div>
+          <div class="input-group">
+            <label for="name">Product Name</label>
+            <input type="text" id="name" name="name" required placeholder="e.g. Classic Abaya">
+          </div>
+        </div>
+
+        <div class="grid-2">
+          <div class="input-group">
+            <label for="brand">Brand</label>
+            <input type="text" id="brand" name="brand" required placeholder="e.g. Al-Fahd">
+          </div>
+          <div class="input-group">
+            <label for="size">Size</label>
+            <input type="text" id="size" name="size" required placeholder="e.g. M, L, XL">
+          </div>
+        </div>
+
+        <div class="grid-2">
+          <div class="input-group">
+            <label for="price">Price (EGP)</label>
+            <input type="number" step="0.01" id="price" name="price" required placeholder="0.00">
+          </div>
+          <div class="input-group">
+            <label for="image">Product Image</label>
+            <input type="file" id="image" name="image" accept="image/*">
+            <div id="currentImageContainer" class="mt-sm hidden">
+              <img id="currentImagePreview" src="" alt="Current" class="img-preview-small">
+            </div>
+          </div>
+        </div>
+
+        <div id="formError" class="error-text hidden"></div>
+
+        <div class="flex-end gap-1 mt-1">
+          <button type="button" id="cancelBtn" class="btn btn-secondary">Cancel</button>
+          <button type="submit" id="saveBtn" class="btn btn-primary">
+            <span>Save Product</span>
+            <div class="spinner hidden" id="saveSpinner"></div>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script type="module" src="/js/api.js"></script>
+  <script type="module" src="/js/dashboard.js"></script>
+</body>
+</html>
