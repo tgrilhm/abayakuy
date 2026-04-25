@@ -2,6 +2,7 @@ node_modules/
 .env
 .env.local
 .env.*.local
+.vercel/
 
 generated/
 dist/
@@ -16,7 +17,3 @@ pnpm-debug.log*
 
 .vscode/
 .next/
-dist/
-build/
-.env*
-node_modules/
