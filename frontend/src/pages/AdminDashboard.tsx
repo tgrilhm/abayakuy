@@ -48,10 +48,10 @@ export const AdminProductList: React.FC<AdminProductListProps> = ({ products, lo
   // Filter products
   const filtered = products.filter(p => {
     const q = searchQuery.toLowerCase();
-    return p.kode.toLowerCase().includes(q) ||
-      p.brand.toLowerCase().includes(q) ||
-      p.bahan.toLowerCase().includes(q) ||
-      p.warna.toLowerCase().includes(q);
+    return (p.kode || '').toLowerCase().includes(q) ||
+      (p.brand || '').toLowerCase().includes(q) ||
+      (p.bahan || '').toLowerCase().includes(q) ||
+      (p.warna || '').toLowerCase().includes(q);
   });
 
   const showToast = (message: string, type: 'success' | 'error' = 'success') => {
@@ -73,12 +73,12 @@ export const AdminProductList: React.FC<AdminProductListProps> = ({ products, lo
   const openEditModal = (product: Product) => {
     setEditingProduct(product);
     setFormData({
-      kode: product.kode,
-      brand: product.brand,
-      bahan: product.bahan,
-      ukuran: product.ukuran.join(', '),
-      warna: product.warna,
-      harga: product.harga.toString(),
+      kode: product.kode || '',
+      brand: product.brand || '',
+      bahan: product.bahan || '',
+      ukuran: (product.ukuran || []).join(', '),
+      warna: product.warna || '',
+      harga: String(product.harga ?? ''),
     });
     setNewFiles([]);
     setDeletedMediaIds([]);
@@ -101,7 +101,7 @@ export const AdminProductList: React.FC<AdminProductListProps> = ({ products, lo
 
     const selected = Array.from(e.target.files);
     const existingMediaCount = editingProduct
-      ? editingProduct.media.length - deletedMediaIds.length
+      ? (editingProduct.media?.length || 0) - deletedMediaIds.length
       : 0;
     const totalCount = existingMediaCount + newFiles.length + selected.length;
 
@@ -191,7 +191,7 @@ export const AdminProductList: React.FC<AdminProductListProps> = ({ products, lo
   };
 
   return (
-    <div className="flex-grow p-6 md:p-12 overflow-auto">
+      <div className="flex-grow p-6 md:p-12 overflow-auto">
       {/* Toast */}
       <AnimatePresence>
         {toast && (
@@ -279,21 +279,21 @@ export const AdminProductList: React.FC<AdminProductListProps> = ({ products, lo
                         )}
                       </div>
                       <div>
-                        <p className="font-lexend text-sm font-medium">{product.brand}</p>
-                        <p className="text-xs text-on-surface-variant mt-1">{product.kode}</p>
+                        <p className="font-lexend text-sm font-medium">{product.brand || 'Unknown Brand'}</p>
+                        <p className="text-xs text-on-surface-variant mt-1">{product.kode || 'Untitled'}</p>
                       </div>
                     </td>
-                    <td className="p-4 text-sm">{product.kode}</td>
-                    <td className="p-4 text-sm">{product.bahan}</td>
-                    <td className="p-4 text-sm">{product.warna}</td>
+                    <td className="p-4 text-sm">{product.kode || 'Untitled'}</td>
+                    <td className="p-4 text-sm">{product.bahan || 'Not specified'}</td>
+                    <td className="p-4 text-sm">{product.warna || 'Not specified'}</td>
                     <td className="p-4">
                       <div className="flex gap-1 flex-wrap">
-                        {product.ukuran.map(size => (
+                        {(product.ukuran || []).map(size => (
                           <span key={size} className="px-2 py-0.5 text-[10px] uppercase font-bold bg-surface-highest">{size}</span>
                         ))}
                       </div>
                     </td>
-                    <td className="p-4 text-sm font-medium">EGP {product.harga.toFixed(2)}</td>
+                    <td className="p-4 text-sm font-medium">EGP {Number(product.harga ?? 0).toFixed(2)}</td>
                     <td className="p-4">
                       <span className="text-xs text-on-surface-variant">
                         {product.media?.length || 0} file{(product.media?.length || 0) !== 1 ? 's' : ''}
@@ -440,11 +440,11 @@ export const AdminProductList: React.FC<AdminProductListProps> = ({ products, lo
                   </label>
 
                   {/* Existing media (when editing) */}
-                  {editingProduct && editingProduct.media.length > 0 && (
+                  {editingProduct && (editingProduct.media?.length || 0) > 0 && (
                     <div className="mb-4">
                       <p className="text-xs text-on-surface-variant mb-2">Current media:</p>
                       <div className="grid grid-cols-4 gap-2">
-                        {editingProduct.media.map((media) => {
+                        {(editingProduct.media || []).map((media) => {
                           const isDeleted = deletedMediaIds.includes(media.id);
                           return (
                             <div

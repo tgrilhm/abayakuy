@@ -13,6 +13,17 @@ import { AdminProductList } from './pages/AdminDashboard';
 import { motion, AnimatePresence } from 'motion/react';
 import { api } from './api';
 
+const normalizeProduct = (product: Product): Product => ({
+  ...product,
+  kode: product.kode ?? 'Untitled',
+  brand: product.brand ?? 'Unknown Brand',
+  bahan: product.bahan ?? 'Not specified',
+  ukuran: Array.isArray(product.ukuran) ? product.ukuran : [],
+  warna: product.warna ?? 'Not specified',
+  harga: typeof product.harga === 'number' ? product.harga : 0,
+  media: Array.isArray(product.media) ? product.media : [],
+});
+
 export default function App() {
   const [view, setView] = useState<View>(api.isAuthenticated() ? 'storefront' : 'storefront');
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
@@ -23,7 +34,7 @@ export default function App() {
     try {
       setLoading(true);
       const data = await api.getProducts();
-      setProducts(data);
+      setProducts(Array.isArray(data) ? data.map(normalizeProduct) : []);
     } catch (err) {
       console.error('Failed to fetch products:', err);
       // Public storefront can show empty state

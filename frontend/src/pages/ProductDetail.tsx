@@ -21,6 +21,7 @@ export const ProductDetail: React.FC<ProductDetailProps> = ({ product, onBack })
   const images = product.media?.filter(m => m.type === 'image') || [];
   const videos = product.media?.filter(m => m.type === 'video') || [];
   const allMedia = [...images, ...videos];
+  const formatPrice = (price: number | null | undefined) => `EGP ${Number(price ?? 0).toFixed(2)}`;
 
   return (
     <div className="pt-[100px] pb-20 max-w-[1440px] mx-auto px-6 md:px-12">
@@ -83,34 +84,34 @@ export const ProductDetail: React.FC<ProductDetailProps> = ({ product, onBack })
         {/* Info */}
         <div className="lg:col-span-5 flex flex-col gap-8 sticky top-[120px]">
           <div>
-            <p className="uppercase-label text-on-surface-variant mb-2">{product.brand}</p>
-            <h1 className="text-5xl font-light mb-4">{product.kode}</h1>
-            <p className="text-3xl">EGP {product.harga.toFixed(2)}</p>
+            <p className="uppercase-label text-on-surface-variant mb-2">{product.brand || 'Unknown Brand'}</p>
+            <h1 className="text-5xl font-light mb-4">{product.kode || 'Untitled'}</h1>
+            <p className="text-3xl">{formatPrice(product.harga)}</p>
           </div>
 
           <div className="border-t border-b border-surface-high py-8 grid grid-cols-2 gap-y-6">
             <div className="flex flex-col">
               <span className="uppercase-label text-[10px] text-on-surface-variant mb-1">Kode</span>
-              <span className="text-sm">{product.kode}</span>
+              <span className="text-sm">{product.kode || 'Untitled'}</span>
             </div>
             <div className="flex flex-col">
               <span className="uppercase-label text-[10px] text-on-surface-variant mb-1">Brand</span>
-              <span className="text-sm">{product.brand}</span>
+              <span className="text-sm">{product.brand || 'Unknown Brand'}</span>
             </div>
             <div className="flex flex-col">
               <span className="uppercase-label text-[10px] text-on-surface-variant mb-1">Bahan</span>
-              <span className="text-sm">{product.bahan}</span>
+              <span className="text-sm">{product.bahan || 'Not specified'}</span>
             </div>
             <div className="flex flex-col">
               <span className="uppercase-label text-[10px] text-on-surface-variant mb-1">Warna</span>
-              <span className="text-sm">{product.warna}</span>
+              <span className="text-sm">{product.warna || 'Not specified'}</span>
             </div>
           </div>
 
           <div className="space-y-4">
             <span className="uppercase-label text-[10px] text-on-surface-variant">Ukuran</span>
             <div className="flex gap-3 flex-wrap">
-              {product.ukuran.map((size) => (
+              {(product.ukuran || []).map((size) => (
                 <span
                   key={size}
                   className="w-12 h-12 border border-primary flex items-center justify-center text-sm"

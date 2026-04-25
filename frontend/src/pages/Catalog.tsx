@@ -16,6 +16,7 @@ interface CatalogProps {
 
 export const Catalog: React.FC<CatalogProps> = ({ products, loading, onProductClick }) => {
   const heroProduct = products[0];
+  const formatPrice = (price: number | null | undefined) => `EGP ${Number(price ?? 0).toFixed(2)}`;
 
   if (loading && products.length === 0) {
     return (
@@ -62,20 +63,20 @@ export const Catalog: React.FC<CatalogProps> = ({ products, loading, onProductCl
 
             <div className="lg:col-span-5 flex flex-col gap-6">
               <span className="uppercase-label text-on-surface-variant">Featured Drop</span>
-              <h1 className="text-5xl font-light tracking-tight">{heroProduct.brand}</h1>
-              <p className="text-xl text-on-surface-variant">EGP {heroProduct.harga.toFixed(2)}</p>
+              <h1 className="text-5xl font-light tracking-tight">{heroProduct.brand || 'Unknown Brand'}</h1>
+              <p className="text-xl text-on-surface-variant">{formatPrice(heroProduct.harga)}</p>
               <div className="flex flex-col gap-2">
                 <p className="text-on-surface-variant text-sm">
                   <span className="uppercase-label text-[10px] text-on-surface-variant mr-2">Kode:</span>
-                  {heroProduct.kode}
+                  {heroProduct.kode || 'Untitled'}
                 </p>
                 <p className="text-on-surface-variant text-sm">
                   <span className="uppercase-label text-[10px] text-on-surface-variant mr-2">Bahan:</span>
-                  {heroProduct.bahan}
+                  {heroProduct.bahan || 'Not specified'}
                 </p>
                 <p className="text-on-surface-variant text-sm">
                   <span className="uppercase-label text-[10px] text-on-surface-variant mr-2">Warna:</span>
-                  {heroProduct.warna}
+                  {heroProduct.warna || 'Not specified'}
                 </p>
               </div>
               <button
@@ -113,7 +114,7 @@ export const Catalog: React.FC<CatalogProps> = ({ products, loading, onProductCl
                 {getImageUrl(product) ? (
                   <img
                     src={getImageUrl(product)}
-                    alt={product.kode}
+                    alt={product.kode || 'Product image'}
                     className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
                   />
                 ) : (
@@ -123,9 +124,9 @@ export const Catalog: React.FC<CatalogProps> = ({ products, loading, onProductCl
                 )}
               </div>
               <div className="flex flex-col gap-1">
-                <span className="uppercase-label text-[10px] text-on-surface-variant">{product.brand}</span>
-                <h3 className="text-lg font-serif">{product.kode}</h3>
-                <p className="text-sm text-on-surface-variant">EGP {product.harga.toFixed(2)}</p>
+                <span className="uppercase-label text-[10px] text-on-surface-variant">{product.brand || 'Unknown Brand'}</span>
+                <h3 className="text-lg font-serif">{product.kode || 'Untitled'}</h3>
+                <p className="text-sm text-on-surface-variant">{formatPrice(product.harga)}</p>
               </div>
             </motion.div>
           ))}

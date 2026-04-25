@@ -12,14 +12,14 @@ export interface Media {
 
 export interface Product {
   id: string;
-  kode: string;
-  brand: string;
-  bahan: string;
-  ukuran: string[];
-  warna: string;
-  harga: number;
+  kode: string | null;
+  brand: string | null;
+  bahan: string | null;
+  ukuran: string[] | null;
+  warna: string | null;
+  harga: number | null;
   created_at: string;
-  media: Media[];
+  media: Media[] | null;
 }
 
 export type View = 'storefront' | 'login' | 'admin' | 'detail';
