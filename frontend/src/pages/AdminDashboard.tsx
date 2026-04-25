@@ -33,6 +33,8 @@ const emptyForm: ProductFormData = {
   harga: '',
 };
 
+const MAX_TOTAL_UPLOAD_BYTES = 4 * 1024 * 1024;
+
 export const AdminProductList: React.FC<AdminProductListProps> = ({ products, loading, onRefresh }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [showModal, setShowModal] = useState(false);
@@ -107,6 +109,17 @@ export const AdminProductList: React.FC<AdminProductListProps> = ({ products, lo
 
     if (totalCount > 7) {
       setError(`Maximum 7 files allowed. You can add ${7 - existingMediaCount - newFiles.length} more.`);
+      e.target.value = '';
+      return;
+    }
+
+    const currentBytes = newFiles.reduce((sum, file) => sum + file.size, 0);
+    const selectedBytes = selected.reduce((sum, file) => sum + file.size, 0);
+    const totalBytes = currentBytes + selectedBytes;
+
+    if (totalBytes > MAX_TOTAL_UPLOAD_BYTES) {
+      setError('Upload too large for Vercel. Please keep the total new upload under about 4 MB.');
+      e.target.value = '';
       return;
     }
 

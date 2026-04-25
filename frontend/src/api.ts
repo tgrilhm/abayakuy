@@ -5,9 +5,40 @@
 
 const API_URL = '/api';
 
+const MAX_VERCEL_UPLOAD_MESSAGE =
+  'Upload too large for Vercel. Please keep the total upload under about 4 MB, or upload fewer/smaller files.';
+
 const getAuthHeaders = (): Record<string, string> => {
   const token = localStorage.getItem('token');
   return token ? { Authorization: `Bearer ${token}` } : {};
+};
+
+const parseResponse = async (res: Response) => {
+  const contentType = res.headers.get('content-type') || '';
+
+  if (contentType.includes('application/json')) {
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.error || data.message || `Request failed with status ${res.status}`);
+    }
+    return data;
+  }
+
+  const text = await res.text();
+
+  if (!res.ok) {
+    if (
+      res.status === 413 ||
+      text.includes('Request Entity Too Large') ||
+      text.includes('FUNCTION_PAYLOAD_TOO_LARGE')
+    ) {
+      throw new Error(MAX_VERCEL_UPLOAD_MESSAGE);
+    }
+
+    throw new Error(text || `Request failed with status ${res.status}`);
+  }
+
+  return text;
 };
 
 export const api = {
@@ -17,9 +48,7 @@ export const api = {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ username, password }),
     });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'Login failed');
-    return data;
+    return parseResponse(res);
   },
 
   getProducts: async () => {
@@ -30,18 +59,14 @@ export const api = {
       localStorage.removeItem('token');
       throw new Error('Unauthorized');
     }
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'Failed to fetch products');
-    return data;
+    return parseResponse(res);
   },
 
   getProductById: async (id: string) => {
     const res = await fetch(`${API_URL}/products/${id}`, {
       headers: getAuthHeaders(),
     });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'Failed to fetch product');
-    return data;
+    return parseResponse(res);
   },
 
   createProduct: async (formData: FormData) => {
@@ -50,9 +75,7 @@ export const api = {
       headers: getAuthHeaders(),
       body: formData,
     });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'Failed to create product');
-    return data;
+    return parseResponse(res);
   },
 
   updateProduct: async (id: string, formData: FormData) => {
@@ -61,9 +84,7 @@ export const api = {
       headers: getAuthHeaders(),
       body: formData,
     });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'Failed to update product');
-    return data;
+    return parseResponse(res);
   },
 
   deleteProduct: async (id: string) => {
@@ -71,9 +92,7 @@ export const api = {
       method: 'DELETE',
       headers: getAuthHeaders(),
     });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'Failed to delete product');
-    return data;
+    return parseResponse(res);
   },
 
   isAuthenticated: () => {
