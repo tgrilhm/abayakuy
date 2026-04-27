@@ -143,9 +143,9 @@ export const createProduct = async (req, res, next) => {
 
 export const getProducts = async (req, res, next) => {
   try {
-    const { page = 1, limit = 20, kategori, page: pageName } = req.query;
-
-    const pageNum = Math.max(1, parseInt(page, 10));
+    const { limit = 20, kategori } = req.query;
+    const pageNum = Math.max(1, parseInt(req.query.page || '1', 10));
+    const pageName = req.query.pageName; // 'trending' | 'sale' | undefined
     const limitNum = Math.min(100, Math.max(1, parseInt(limit, 10)));
     const skip = (pageNum - 1) * limitNum;
 
@@ -179,6 +179,20 @@ export const getProducts = async (req, res, next) => {
         pages: Math.ceil(total / limitNum),
       },
     });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// GET /api/products/hero — returns the single hero-featured product (public)
+export const getHeroProduct = async (req, res, next) => {
+  try {
+    const product = await prisma.product.findFirst({
+      where: { isHeroFeatured: true },
+      include: { media: { orderBy: { order: 'asc' } } },
+    });
+    // Return null gracefully if none is set
+    res.status(200).json(product ?? null);
   } catch (error) {
     next(error);
   }

@@ -60,7 +60,7 @@ export const api = {
     if (params?.page) query.set('page', String(params.page));
     if (params?.limit) query.set('limit', String(params.limit));
     if (params?.kategori) query.set('kategori', params.kategori);
-    if (params?.pageName) query.set('page', params.pageName);
+    if (params?.pageName) query.set('pageName', params.pageName);
 
     const qs = query.toString();
     const res = await fetch(`${API_URL}/products${qs ? `?${qs}` : ''}`, {
@@ -79,6 +79,12 @@ export const api = {
     const res = await fetch(`${API_URL}/products/${id}`, {
       headers: getAuthHeaders(),
     });
+    return parseResponse(res);
+  },
+
+  getHeroProduct: async (): Promise<import('./types').Product | null> => {
+    const res = await fetch(`${API_URL}/products/hero`);
+    if (!res.ok) return null;
     return parseResponse(res);
   },
 

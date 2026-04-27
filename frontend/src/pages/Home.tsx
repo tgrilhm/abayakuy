@@ -18,16 +18,22 @@ export default function Home() {
   const [products, setProducts] = useState<Product[]>([]);
   const [heroProduct, setHeroProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
 
   useEffect(() => {
     const fetchProducts = async () => {
       try {
-        const result = await api.getProducts();
-        const all = Array.isArray(result) ? result : result.data ?? [];
-        setProducts(all);
-        // Find the hero-featured product
-        const hero = all.find((p) => p.isHeroFeatured) ?? null;
-        setHeroProduct(hero);
+        const [heroResult, catalogResult] = await Promise.all([
+          api.getHeroProduct(),
+          api.getProducts({ page: 1, limit: 8 }),
+        ]);
+        setHeroProduct(heroResult);
+        const result = Array.isArray(catalogResult) ? { data: catalogResult, pagination: { pages: 1 } } : catalogResult;
+        setProducts(result.data ?? []);
+        setTotalPages(result.pagination?.pages ?? 1);
+        setCurrentPage(1);
       } catch (err) {
         console.error("Failed to fetch products:", err);
       } finally {
@@ -36,6 +42,23 @@ export default function Home() {
     };
     fetchProducts();
   }, []);
+
+  const handleLoadMore = async () => {
+    if (loadingMore || currentPage >= totalPages) return;
+    setLoadingMore(true);
+    try {
+      const nextPage = currentPage + 1;
+      const result = await api.getProducts({ page: nextPage, limit: 8 });
+      const newProducts = Array.isArray(result) ? result : result.data ?? [];
+      setProducts((prev) => [...prev, ...newProducts]);
+      setCurrentPage(nextPage);
+      setTotalPages(Array.isArray(result) ? 1 : result.pagination?.pages ?? 1);
+    } catch (err) {
+      console.error("Failed to load more:", err);
+    } finally {
+      setLoadingMore(false);
+    }
+  };
 
   const newArrivals = products.slice(0, 3);
   const catalog = products;
@@ -191,10 +214,21 @@ export default function Home() {
           )}
         </div>
 
-        {catalog.length > 0 && (
+        {catalog.length > 0 && currentPage < totalPages && (
           <div className="mt-20 flex justify-center">
-            <button className="bg-transparent border border-black text-black font-sans text-[11px] tracking-[0.25em] uppercase px-14 py-3.5 hover:bg-black hover:text-white transition-all duration-500">
-              Load More
+            <button
+              onClick={handleLoadMore}
+              disabled={loadingMore}
+              className="bg-transparent border border-black text-black font-sans text-[11px] tracking-[0.25em] uppercase px-14 py-3.5 hover:bg-black hover:text-white transition-all duration-500 disabled:opacity-40 flex items-center gap-3"
+            >
+              {loadingMore ? (
+                <>
+                  <span className="w-3.5 h-3.5 border border-current border-t-transparent rounded-full animate-spin" />
+                  Loading...
+                </>
+              ) : (
+                'Load More'
+              )}
             </button>
           </div>
         )}

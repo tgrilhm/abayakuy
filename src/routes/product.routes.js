@@ -3,6 +3,7 @@ import {
   createProduct,
   getProducts,
   getProductById,
+  getHeroProduct,
   updateProduct,
   updateProductPages,
   deleteProduct,
@@ -13,6 +14,7 @@ import { uploadMiddleware } from '../middlewares/upload.middleware.js';
 const router = Router();
 
 // Public routes — storefront can read without a token
+router.get('/hero', getHeroProduct);       // must be before /:id
 router.get('/', getProducts);
 router.get('/:id', getProductById);
 
