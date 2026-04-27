@@ -11,12 +11,17 @@ datasource db {
 model Product {
   id         String   @id @default(uuid()) @db.Uuid
   kode       String?  @unique
+  nama       String?  // Display name
   brand      String?
   bahan      String?  // Material / Fabric
   ukuran     String[] // Sizes array e.g. ["S", "M", "L"]
   warna      String?  // Color (single text)
   harga      Float?   // Price
+  kategori   String?  // Category e.g. "Abaya Hitam", "Abaya Warna"
+  deskripsi  String?  // Long description for product detail page
+  stok       Int?     // Stock quantity
   created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
 
   media Media[] // Multiple photos/videos
 

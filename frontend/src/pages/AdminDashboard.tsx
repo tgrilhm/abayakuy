@@ -17,20 +17,28 @@ interface AdminProductListProps {
 
 interface ProductFormData {
   kode: string;
+  nama: string;
   brand: string;
   bahan: string;
   ukuran: string;
   warna: string;
   harga: string;
+  kategori: string;
+  deskripsi: string;
+  stok: string;
 }
 
 const emptyForm: ProductFormData = {
   kode: '',
+  nama: '',
   brand: '',
   bahan: '',
   ukuran: '',
   warna: '',
   harga: '',
+  kategori: '',
+  deskripsi: '',
+  stok: '',
 };
 
 const MAX_TOTAL_UPLOAD_BYTES = 4 * 1024 * 1024;
@@ -51,9 +59,11 @@ export const AdminProductList: React.FC<AdminProductListProps> = ({ products, lo
   const filtered = products.filter(p => {
     const q = searchQuery.toLowerCase();
     return (p.kode || '').toLowerCase().includes(q) ||
+      (p.nama || '').toLowerCase().includes(q) ||
       (p.brand || '').toLowerCase().includes(q) ||
       (p.bahan || '').toLowerCase().includes(q) ||
-      (p.warna || '').toLowerCase().includes(q);
+      (p.warna || '').toLowerCase().includes(q) ||
+      (p.kategori || '').toLowerCase().includes(q);
   });
 
   const showToast = (message: string, type: 'success' | 'error' = 'success') => {
@@ -76,11 +86,15 @@ export const AdminProductList: React.FC<AdminProductListProps> = ({ products, lo
     setEditingProduct(product);
     setFormData({
       kode: product.kode || '',
+      nama: product.nama || '',
       brand: product.brand || '',
       bahan: product.bahan || '',
       ukuran: (product.ukuran || []).join(', '),
       warna: product.warna || '',
       harga: String(product.harga ?? ''),
+      kategori: product.kategori || '',
+      deskripsi: product.deskripsi || '',
+      stok: product.stok != null ? String(product.stok) : '',
     });
     setNewFiles([]);
     setDeletedMediaIds([]);
@@ -114,7 +128,7 @@ export const AdminProductList: React.FC<AdminProductListProps> = ({ products, lo
     }
 
     const currentBytes = newFiles.reduce((sum, file) => sum + file.size, 0);
-    const selectedBytes = selected.reduce((sum, file) => sum + file.size, 0);
+    const selectedBytes = (selected as File[]).reduce((sum, file) => sum + file.size, 0);
     const totalBytes = currentBytes + selectedBytes;
 
     if (totalBytes > MAX_TOTAL_UPLOAD_BYTES) {
@@ -153,11 +167,15 @@ export const AdminProductList: React.FC<AdminProductListProps> = ({ products, lo
     try {
       const fd = new FormData();
       fd.append('kode', formData.kode);
+      fd.append('nama', formData.nama);
       fd.append('brand', formData.brand);
       fd.append('bahan', formData.bahan);
       fd.append('ukuran', JSON.stringify(formData.ukuran.split(',').map(s => s.trim()).filter(Boolean)));
       fd.append('warna', formData.warna);
       fd.append('harga', formData.harga);
+      if (formData.kategori) fd.append('kategori', formData.kategori);
+      if (formData.deskripsi) fd.append('deskripsi', formData.deskripsi);
+      if (formData.stok) fd.append('stok', formData.stok);
 
       // Append new files
       newFiles.forEach(file => {
@@ -272,11 +290,12 @@ export const AdminProductList: React.FC<AdminProductListProps> = ({ products, lo
                 <tr>
                   <th className="p-4 uppercase-label text-[10px]">Product</th>
                   <th className="p-4 uppercase-label text-[10px]">Kode</th>
+                  <th className="p-4 uppercase-label text-[10px]">Kategori</th>
                   <th className="p-4 uppercase-label text-[10px]">Bahan</th>
                   <th className="p-4 uppercase-label text-[10px]">Warna</th>
                   <th className="p-4 uppercase-label text-[10px]">Ukuran</th>
                   <th className="p-4 uppercase-label text-[10px]">Harga</th>
-                  <th className="p-4 uppercase-label text-[10px]">Media</th>
+                  <th className="p-4 uppercase-label text-[10px]">Stok</th>
                   <th className="p-4 uppercase-label text-[10px] text-right">Actions</th>
                 </tr>
               </thead>
@@ -292,13 +311,14 @@ export const AdminProductList: React.FC<AdminProductListProps> = ({ products, lo
                         )}
                       </div>
                       <div>
-                        <p className="font-lexend text-sm font-medium">{product.brand || 'Unknown Brand'}</p>
+                        <p className="font-lexend text-sm font-medium">{product.nama || product.brand || 'Unknown'}</p>
                         <p className="text-xs text-on-surface-variant mt-1">{product.kode || 'Untitled'}</p>
                       </div>
                     </td>
-                    <td className="p-4 text-sm">{product.kode || 'Untitled'}</td>
-                    <td className="p-4 text-sm">{product.bahan || 'Not specified'}</td>
-                    <td className="p-4 text-sm">{product.warna || 'Not specified'}</td>
+                    <td className="p-4 text-sm">{product.kode || '—'}</td>
+                    <td className="p-4 text-sm">{product.kategori || '—'}</td>
+                    <td className="p-4 text-sm">{product.bahan || '—'}</td>
+                    <td className="p-4 text-sm">{product.warna || '—'}</td>
                     <td className="p-4">
                       <div className="flex gap-1 flex-wrap">
                         {(product.ukuran || []).map(size => (
@@ -307,10 +327,12 @@ export const AdminProductList: React.FC<AdminProductListProps> = ({ products, lo
                       </div>
                     </td>
                     <td className="p-4 text-sm font-medium">EGP {Number(product.harga ?? 0).toFixed(2)}</td>
-                    <td className="p-4">
-                      <span className="text-xs text-on-surface-variant">
-                        {product.media?.length || 0} file{(product.media?.length || 0) !== 1 ? 's' : ''}
-                      </span>
+                    <td className="p-4 text-sm">
+                      {product.stok != null ? (
+                        <span className={product.stok === 0 ? 'text-red-500' : 'text-on-surface'}>
+                          {product.stok}
+                        </span>
+                      ) : '—'}
                     </td>
                     <td className="p-4 text-right opacity-0 group-hover:opacity-100 transition-opacity">
                       <button
@@ -378,6 +400,18 @@ export const AdminProductList: React.FC<AdminProductListProps> = ({ products, lo
                   />
                 </div>
 
+                {/* Nama */}
+                <div>
+                  <label className="uppercase-label text-[10px] mb-1 block">Nama (Display Name)</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. Abaya Nida Premium Hitam"
+                    value={formData.nama}
+                    onChange={(e) => setFormData(prev => ({ ...prev, nama: e.target.value }))}
+                    className="w-full border-b border-surface-variant py-2 focus:outline-none focus:border-primary text-sm bg-transparent"
+                  />
+                </div>
+
                 <div className="grid grid-cols-2 gap-4">
                   {/* Brand */}
                   <div>
@@ -433,6 +467,32 @@ export const AdminProductList: React.FC<AdminProductListProps> = ({ products, lo
                   </div>
                 </div>
 
+                <div className="grid grid-cols-2 gap-4">
+                  {/* Kategori */}
+                  <div>
+                    <label className="uppercase-label text-[10px] mb-1 block">Kategori</label>
+                    <input
+                      type="text"
+                      placeholder="e.g. Abaya Hitam"
+                      value={formData.kategori}
+                      onChange={(e) => setFormData(prev => ({ ...prev, kategori: e.target.value }))}
+                      className="w-full border-b border-surface-variant py-2 bg-transparent text-sm focus:outline-none focus:border-primary"
+                    />
+                  </div>
+                  {/* Stok */}
+                  <div>
+                    <label className="uppercase-label text-[10px] mb-1 block">Stok</label>
+                    <input
+                      type="number"
+                      min="0"
+                      placeholder="e.g. 10"
+                      value={formData.stok}
+                      onChange={(e) => setFormData(prev => ({ ...prev, stok: e.target.value }))}
+                      className="w-full border-b border-surface-variant py-2 bg-transparent text-sm focus:outline-none focus:border-primary"
+                    />
+                  </div>
+                </div>
+
                 {/* Ukuran */}
                 <div>
                   <label className="uppercase-label text-[10px] mb-1 block">Ukuran * (comma separated)</label>
@@ -443,6 +503,18 @@ export const AdminProductList: React.FC<AdminProductListProps> = ({ products, lo
                     value={formData.ukuran}
                     onChange={(e) => setFormData(prev => ({ ...prev, ukuran: e.target.value }))}
                     className="w-full border-b border-surface-variant py-2 bg-transparent text-sm focus:outline-none focus:border-primary"
+                  />
+                </div>
+
+                {/* Deskripsi */}
+                <div>
+                  <label className="uppercase-label text-[10px] mb-1 block">Deskripsi</label>
+                  <textarea
+                    rows={3}
+                    placeholder="Describe the product..."
+                    value={formData.deskripsi}
+                    onChange={(e) => setFormData(prev => ({ ...prev, deskripsi: e.target.value }))}
+                    className="w-full border-b border-surface-variant py-2 bg-transparent text-sm focus:outline-none focus:border-primary resize-none"
                   />
                 </div>
 

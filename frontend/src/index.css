@@ -1,61 +1,242 @@
-@import url('https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;500;700&family=Noto+Serif:ital,wght@0,400;0,700;1,400&display=swap');
 @import "tailwindcss";
 
 @theme {
-  --font-sans: "Lexend", ui-sans-serif, system-ui, sans-serif;
-  --font-serif: "Noto Serif", ui-serif, Georgia, serif;
-
-  /* Modest Editorial Palette */
-  --color-surface-lowest: #ffffff;
-  --color-surface-low: #f3f3f4;
+  --color-surface-container: #eeeeee;
+  --color-inverse-surface: #2f3131;
+  --color-outline: #7e7576;
+  --color-secondary-fixed: #e3e2e2;
+  --color-on-background: #1a1c1c;
+  --color-primary-fixed-dim: #c6c6c6;
+  --color-tertiary: #000000;
+  --color-tertiary-fixed-dim: #c6c6c7;
+  --color-on-tertiary-container: #838484;
+  --color-surface-container-highest: #e2e2e2;
+  --color-on-surface-variant: #4c4546;
   --color-surface: #f9f9f9;
-  --color-surface-high: #e8e8e8;
-  --color-surface-highest: #e2e2e2;
-  
+  --color-on-tertiary-fixed-variant: #454747;
+  --color-error: #ba1a1a;
+  --color-secondary: #5e5e5e;
+  --color-tertiary-container: #1a1c1c;
+  --color-surface-variant: #e2e2e2;
+  --color-secondary-container: #e3e2e2;
+  --color-primary-container: #1b1b1b;
+  --color-surface-container-high: #e8e8e8;
+  --color-inverse-primary: #c6c6c6;
   --color-on-surface: #1a1c1c;
-  --color-on-surface-variant: #444748;
-  
+  --color-surface-tint: #5e5e5e;
+  --color-tertiary-fixed: #e2e2e2;
+  --color-surface-bright: #f9f9f9;
+  --color-outline-variant: #cfc4c5;
+  --color-on-secondary-container: #646464;
+  --color-on-tertiary-fixed: #1a1c1c;
+  --color-on-primary-fixed: #1b1b1b;
+  --color-on-error: #ffffff;
   --color-primary: #000000;
+  --color-on-primary-fixed-variant: #474747;
+  --color-on-secondary-fixed: #1b1c1c;
+  --color-surface-container-lowest: #ffffff;
+  --color-inverse-on-surface: #f0f1f1;
+  --color-error-container: #ffdad6;
+  --color-on-secondary-fixed-variant: #464747;
+  --color-on-secondary: #ffffff;
   --color-on-primary: #ffffff;
-  
-  --color-accent: #77555d; /* Secondary Blush */
-  --color-accent-container: #ffd1db;
-  --color-on-accent-container: #7a585f;
+  --color-surface-dim: #dadada;
+  --color-primary-fixed: #e2e2e2;
+  --color-surface-container-low: #f3f3f4;
+  --color-on-tertiary: #ffffff;
+  --color-on-primary-container: #848484;
+  --color-background: #faf8f6;
+  --color-on-error-container: #93000a;
+  --color-secondary-fixed-dim: #c7c6c6;
 
-  --color-outline: #747878;
-  --color-outline-variant: #c4c7c7;
-
-  --radius-none: 0;
-  --radius-sm: 0;
-  --radius-md: 0;
-  --radius-lg: 0;
-  --radius-xl: 0;
-  --radius-2xl: 0;
-  --radius-3xl: 0;
+  --radius-none: 0px;
+  --radius-sm: 0.25rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.5rem;
+  --radius-xl: 0.75rem;
+  --radius-2xl: 0.75rem;
   --radius-full: 9999px;
+
+  --spacing-base: 8px;
+  --spacing-section-padding: 80px;
+  --spacing-gutter: 24px;
+  --spacing-element-gap: 16px;
+  --spacing-container-max: 1280px;
+
+  /* Swapped from Inter to Manrope — more characterful sans-serif */
+  --font-label-caps: "Manrope", sans-serif;
+  --font-button: "Manrope", sans-serif;
+  --font-body-md: "Manrope", sans-serif;
+  --font-headline-xl: "Noto Serif", serif;
+  --font-headline-lg: "Noto Serif", serif;
+  --font-body-lg: "Manrope", sans-serif;
+  --font-headline-md: "Noto Serif", serif;
+  --font-body-sm: "Manrope", sans-serif;
+  --font-serif: "Noto Serif", serif;
+  --font-sans: "Manrope", sans-serif;
 }
 
 @layer base {
   body {
-    @apply bg-surface text-on-surface font-serif antialiased;
-  }
-  
-  h1, h2, h3, h4, h5, h6, .font-lexend {
-    @apply font-sans tracking-tight;
+    @apply bg-background text-on-background font-body-md antialiased;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
 
-  .uppercase-label {
-    @apply font-sans text-[10px] sm:text-xs font-medium uppercase tracking-[0.2em];
+  /* Smooth scroll */
+  html {
+    scroll-behavior: smooth;
+  }
+
+  /* Better image rendering */
+  img {
+    image-rendering: auto;
   }
 }
 
-/* Custom Scrollbar */
+/* Material Symbols */
+.material-symbols-outlined {
+  font-variation-settings: 'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 24;
+}
+
+/* ─── Page-level Reveal Animation ─── */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.animate-reveal {
+  animation: fadeInUp 0.7s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.animate-reveal-delay-1 {
+  animation: fadeInUp 0.7s cubic-bezier(0.16, 1, 0.3, 1) 0.1s both;
+}
+
+.animate-reveal-delay-2 {
+  animation: fadeInUp 0.7s cubic-bezier(0.16, 1, 0.3, 1) 0.2s both;
+}
+
+.animate-reveal-delay-3 {
+  animation: fadeInUp 0.7s cubic-bezier(0.16, 1, 0.3, 1) 0.3s both;
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.9s ease both;
+}
+
+/* ─── Skeleton Loading Shimmer ─── */
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--color-surface-container) 25%,
+    var(--color-surface-container-high) 50%,
+    var(--color-surface-container) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.8s ease-in-out infinite;
+}
+
+/* ─── Grain Overlay (luxury texture) ─── */
+.grain-overlay::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  opacity: 0.035;
+  pointer-events: none;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-repeat: repeat;
+  background-size: 256px;
+  z-index: 1;
+}
+
+/* ─── Custom Scrollbar ─── */
 ::-webkit-scrollbar {
-  width: 6px;
+  width: 5px;
 }
 ::-webkit-scrollbar-track {
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  @apply bg-outline-variant rounded-full;
+  @apply bg-outline-variant;
+  border-radius: 100px;
+}
+
+/* ─── Selection Color ─── */
+::selection {
+  background: var(--color-primary);
+  color: var(--color-on-primary);
+}
+
+/* ─── Nav Link Underline Slide ─── */
+.nav-link {
+  position: relative;
+}
+.nav-link::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 0;
+  height: 1px;
+  background: currentColor;
+  transition: width 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.nav-link:hover::after,
+.nav-link--active::after {
+  width: 100%;
+}
+
+/* ─── Button Utilities ─── */
+.btn-primary {
+  background: white;
+  color: black;
+  font-family: var(--font-sans);
+  font-size: 11px;
+  letter-spacing: 0.25em;
+  text-transform: uppercase;
+  padding: 14px 40px;
+  border: none;
+  cursor: pointer;
+  transition: background 0.5s ease, color 0.5s ease, transform 0.15s ease;
+  display: inline-block;
+}
+.btn-primary:hover {
+  background: black;
+  color: white;
+}
+.btn-primary:active {
+  transform: scale(0.97);
+}
+
+/* ─── Scroll Line Animation ─── */
+@keyframes scrollPulse {
+  0%, 100% { opacity: 0.3; transform: scaleY(1); }
+  50% { opacity: 0.7; transform: scaleY(0.6); }
+}
+.scroll-line {
+  animation: scrollPulse 2s ease-in-out infinite;
+  transform-origin: top;
+}
+
+/* ─── Newsletter input bg ─── */
+.bg-white\/8 {
+  background-color: rgba(255, 255, 255, 0.08);
 }

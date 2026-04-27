@@ -11,13 +11,13 @@ import { uploadMiddleware } from '../middlewares/upload.middleware.js';
 
 const router = Router();
 
-// Protect all product routes
-router.use(requireAuth);
-
-router.post('/', uploadMiddleware, createProduct);
+// Public routes — storefront can read without a token
 router.get('/', getProducts);
 router.get('/:id', getProductById);
-router.put('/:id', uploadMiddleware, updateProduct);
-router.delete('/:id', deleteProduct);
+
+// Protected routes — admin only
+router.post('/', requireAuth, uploadMiddleware, createProduct);
+router.put('/:id', requireAuth, uploadMiddleware, updateProduct);
+router.delete('/:id', requireAuth, deleteProduct);
 
 export default router;

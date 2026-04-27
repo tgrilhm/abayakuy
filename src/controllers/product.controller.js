@@ -3,10 +3,12 @@ import { uploadFiles, deleteFile } from '../services/upload.service.js';
 
 export const createProduct = async (req, res, next) => {
   try {
-    const { kode, brand, bahan, ukuran, warna, harga } = req.body;
+    const { kode, nama, brand, bahan, ukuran, warna, harga, kategori, deskripsi, stok } = req.body;
 
     if (!kode || !brand || !bahan || !ukuran || !warna || !harga) {
-      return res.status(400).json({ error: 'All fields are required (kode, brand, bahan, ukuran, warna, harga)' });
+      return res.status(400).json({
+        error: 'Required fields missing: kode, brand, bahan, ukuran, warna, harga',
+      });
     }
 
     // Parse ukuran — accept JSON array string or comma-separated
@@ -14,7 +16,7 @@ export const createProduct = async (req, res, next) => {
     try {
       parsedUkuran = JSON.parse(ukuran);
     } catch {
-      parsedUkuran = ukuran.split(',').map(s => s.trim()).filter(Boolean);
+      parsedUkuran = ukuran.split(',').map((s) => s.trim()).filter(Boolean);
     }
 
     // Upload media files
@@ -23,11 +25,15 @@ export const createProduct = async (req, res, next) => {
     const product = await prisma.product.create({
       data: {
         kode,
+        nama: nama || null,
         brand,
         bahan,
         ukuran: parsedUkuran,
         warna,
         harga: parseFloat(harga),
+        kategori: kategori || null,
+        deskripsi: deskripsi || null,
+        stok: stok ? parseInt(stok, 10) : null,
         media: {
           create: mediaResults.map((m, index) => ({
             url: m.url,
@@ -37,9 +43,7 @@ export const createProduct = async (req, res, next) => {
         },
       },
       include: {
-        media: {
-          orderBy: { order: 'asc' },
-        },
+        media: { orderBy: { order: 'asc' } },
       },
     });
 
@@ -51,17 +55,34 @@ export const createProduct = async (req, res, next) => {
 
 export const getProducts = async (req, res, next) => {
   try {
-    const products = await prisma.product.findMany({
-      orderBy: {
-        created_at: 'desc',
-      },
-      include: {
-        media: {
-          orderBy: { order: 'asc' },
-        },
+    const { page = 1, limit = 20, kategori } = req.query;
+
+    const pageNum = Math.max(1, parseInt(page, 10));
+    const limitNum = Math.min(100, Math.max(1, parseInt(limit, 10)));
+    const skip = (pageNum - 1) * limitNum;
+
+    const where = kategori ? { kategori } : {};
+
+    const [products, total] = await Promise.all([
+      prisma.product.findMany({
+        where,
+        skip,
+        take: limitNum,
+        orderBy: { created_at: 'desc' },
+        include: { media: { orderBy: { order: 'asc' } } },
+      }),
+      prisma.product.count({ where }),
+    ]);
+
+    res.status(200).json({
+      data: products,
+      pagination: {
+        page: pageNum,
+        limit: limitNum,
+        total,
+        pages: Math.ceil(total / limitNum),
       },
     });
-    res.status(200).json(products);
   } catch (error) {
     next(error);
   }
@@ -70,13 +91,10 @@ export const getProducts = async (req, res, next) => {
 export const getProductById = async (req, res, next) => {
   try {
     const { id } = req.params;
+
     const product = await prisma.product.findUnique({
       where: { id },
-      include: {
-        media: {
-          orderBy: { order: 'asc' },
-        },
-      },
+      include: { media: { orderBy: { order: 'asc' } } },
     });
 
     if (!product) {
@@ -92,9 +110,8 @@ export const getProductById = async (req, res, next) => {
 export const updateProduct = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const { kode, brand, bahan, ukuran, warna, harga, deletedMedia } = req.body;
+    const { kode, nama, brand, bahan, ukuran, warna, harga, kategori, deskripsi, stok, deletedMedia } = req.body;
 
-    // Check if product exists
     const existingProduct = await prisma.product.findUnique({
       where: { id },
       include: { media: true },
@@ -110,7 +127,7 @@ export const updateProduct = async (req, res, next) => {
       try {
         parsedUkuran = JSON.parse(ukuran);
       } catch {
-        parsedUkuran = ukuran.split(',').map(s => s.trim()).filter(Boolean);
+        parsedUkuran = ukuran.split(',').map((s) => s.trim()).filter(Boolean);
       }
     }
 
@@ -124,25 +141,16 @@ export const updateProduct = async (req, res, next) => {
       }
 
       if (mediaToDelete.length > 0) {
-        // Find the media records to get their URLs for storage cleanup
         const mediaRecords = await prisma.media.findMany({
-          where: {
-            id: { in: mediaToDelete },
-            product_id: id,
-          },
+          where: { id: { in: mediaToDelete }, product_id: id },
         });
 
-        // Delete files from Supabase Storage
         for (const record of mediaRecords) {
           await deleteFile(record.url);
         }
 
-        // Delete media records from database
         await prisma.media.deleteMany({
-          where: {
-            id: { in: mediaToDelete },
-            product_id: id,
-          },
+          where: { id: { in: mediaToDelete }, product_id: id },
         });
       }
     }
@@ -150,20 +158,24 @@ export const updateProduct = async (req, res, next) => {
     // Upload new media files
     const mediaResults = await uploadFiles(req.files);
 
-    // Get current max order for this product's media
-    const currentMaxOrder = existingProduct.media.length > 0
-      ? Math.max(...existingProduct.media.map(m => m.order))
-      : -1;
+    const currentMaxOrder =
+      existingProduct.media.length > 0
+        ? Math.max(...existingProduct.media.map((m) => m.order))
+        : -1;
 
     const updatedProduct = await prisma.product.update({
       where: { id },
       data: {
-        kode: kode || existingProduct.kode,
-        brand: brand || existingProduct.brand,
-        bahan: bahan || existingProduct.bahan,
+        kode: kode !== undefined ? kode : existingProduct.kode,
+        nama: nama !== undefined ? nama || null : existingProduct.nama,
+        brand: brand !== undefined ? brand : existingProduct.brand,
+        bahan: bahan !== undefined ? bahan : existingProduct.bahan,
         ukuran: parsedUkuran || existingProduct.ukuran,
-        warna: warna || existingProduct.warna,
-        harga: harga ? parseFloat(harga) : existingProduct.harga,
+        warna: warna !== undefined ? warna : existingProduct.warna,
+        harga: harga !== undefined ? parseFloat(harga) : existingProduct.harga,
+        kategori: kategori !== undefined ? kategori || null : existingProduct.kategori,
+        deskripsi: deskripsi !== undefined ? deskripsi || null : existingProduct.deskripsi,
+        stok: stok !== undefined ? (stok ? parseInt(stok, 10) : null) : existingProduct.stok,
         media: {
           create: mediaResults.map((m, index) => ({
             url: m.url,
@@ -173,9 +185,7 @@ export const updateProduct = async (req, res, next) => {
         },
       },
       include: {
-        media: {
-          orderBy: { order: 'asc' },
-        },
+        media: { orderBy: { order: 'asc' } },
       },
     });
 
@@ -198,15 +208,11 @@ export const deleteProduct = async (req, res, next) => {
       return res.status(404).json({ error: 'Product not found' });
     }
 
-    // Delete all media files from Supabase Storage
     for (const mediaItem of existingProduct.media) {
       await deleteFile(mediaItem.url);
     }
 
-    // Cascade delete will also remove media records
-    await prisma.product.delete({
-      where: { id },
-    });
+    await prisma.product.delete({ where: { id } });
 
     res.status(200).json({ message: 'Product deleted successfully' });
   } catch (error) {

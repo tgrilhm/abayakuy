@@ -1,7 +1,4 @@
-/**
- * @license
- * SPDX-License-Identifier: Apache-2.0
- */
+import { PaginatedProducts } from './types';
 
 const API_URL = '/api';
 
@@ -34,7 +31,6 @@ const parseResponse = async (res: Response) => {
     ) {
       throw new Error(MAX_VERCEL_UPLOAD_MESSAGE);
     }
-
     throw new Error(text || `Request failed with status ${res.status}`);
   }
 
@@ -51,14 +47,29 @@ export const api = {
     return parseResponse(res);
   },
 
-  getProducts: async () => {
-    const res = await fetch(`${API_URL}/products`, {
+  /**
+   * Fetch paginated products. Returns { data: Product[], pagination: {...} }
+   */
+  getProducts: async (params?: {
+    page?: number;
+    limit?: number;
+    kategori?: string;
+  }): Promise<PaginatedProducts> => {
+    const query = new URLSearchParams();
+    if (params?.page) query.set('page', String(params.page));
+    if (params?.limit) query.set('limit', String(params.limit));
+    if (params?.kategori) query.set('kategori', params.kategori);
+
+    const qs = query.toString();
+    const res = await fetch(`${API_URL}/products${qs ? `?${qs}` : ''}`, {
       headers: getAuthHeaders(),
     });
+
     if (res.status === 401) {
       localStorage.removeItem('token');
       throw new Error('Unauthorized');
     }
+
     return parseResponse(res);
   },
 
