@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
 import ProductCard from "../components/ProductCard";
 import { api } from "../api";
 import { Product } from "../types";
@@ -15,13 +16,18 @@ function SkeletonCard({ tall = false }: { tall?: boolean }) {
 
 export default function Home() {
   const [products, setProducts] = useState<Product[]>([]);
+  const [heroProduct, setHeroProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchProducts = async () => {
       try {
         const result = await api.getProducts();
-        setProducts(Array.isArray(result) ? result : result.data ?? []);
+        const all = Array.isArray(result) ? result : result.data ?? [];
+        setProducts(all);
+        // Find the hero-featured product
+        const hero = all.find((p) => p.isHeroFeatured) ?? null;
+        setHeroProduct(hero);
       } catch (err) {
         console.error("Failed to fetch products:", err);
       } finally {
@@ -57,11 +63,22 @@ export default function Home() {
               The Modern<br />Silhouette
             </h1>
             <p className="font-sans text-[12px] text-white/55 mb-8 leading-relaxed tracking-wide animate-reveal-delay-2 max-w-xs">
-              Refined modest wear for the woman who moves with intention.
+              Jastip Abaya Mesir
             </p>
-            <button className="btn-primary animate-reveal-delay-3">
+            {/* Hero product name badge */}
+            {heroProduct && (
+              <div className="mb-5 animate-reveal-delay-2">
+                <span className="font-sans text-[9px] tracking-[0.3em] uppercase text-white/40 block mb-1">
+                  Featured
+                </span>
+                <span className="font-serif text-[1.1rem] text-white/90 italic">
+                  {heroProduct.nama || heroProduct.kode}
+                </span>
+              </div>
+            )}
+            <Link to="/collections" className="btn-primary animate-reveal-delay-3">
               Explore Collection
-            </button>
+            </Link>
           </div>
 
           {/* Scroll indicator */}
@@ -116,9 +133,9 @@ export default function Home() {
       <section className="bg-[#1a1c1c] py-16 px-gutter mb-20 animate-reveal">
         <div className="max-w-container-max mx-auto flex flex-col md:flex-row items-center justify-between gap-8">
           <div>
-            <p className="font-sans text-[9px] tracking-[0.4em] uppercase text-white/35 mb-3">The Philosophy</p>
+            <p className="font-sans text-[9px] tracking-[0.4em] uppercase text-white/35 mb-3">Filosofi Kami</p>
             <h3 className="font-serif text-[clamp(1.3rem,3vw,2rem)] text-white leading-snug max-w-md">
-              Designed for quiet confidence.<br />Worn with intention.
+              Tampil elegan setiap hari,<br />dengan abaya pilihan dari Mesir.
             </h3>
           </div>
           <a

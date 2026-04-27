@@ -54,11 +54,13 @@ export const api = {
     page?: number;
     limit?: number;
     kategori?: string;
+    pageName?: 'trending' | 'sale';
   }): Promise<PaginatedProducts> => {
     const query = new URLSearchParams();
     if (params?.page) query.set('page', String(params.page));
     if (params?.limit) query.set('limit', String(params.limit));
     if (params?.kategori) query.set('kategori', params.kategori);
+    if (params?.pageName) query.set('page', params.pageName);
 
     const qs = query.toString();
     const res = await fetch(`${API_URL}/products${qs ? `?${qs}` : ''}`, {
@@ -102,6 +104,15 @@ export const api = {
     const res = await fetch(`${API_URL}/products/${id}`, {
       method: 'DELETE',
       headers: getAuthHeaders(),
+    });
+    return parseResponse(res);
+  },
+
+  updateProductPages: async (id: string, flags: { isTrending?: boolean; isSale?: boolean; isHeroFeatured?: boolean; isVisible?: boolean }) => {
+    const res = await fetch(`${API_URL}/products/${id}/pages`, {
+      method: 'PATCH',
+      headers: { ...getAuthHeaders(), 'Content-Type': 'application/json' },
+      body: JSON.stringify(flags),
     });
     return parseResponse(res);
   },

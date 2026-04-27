@@ -15,7 +15,10 @@ const normalizeProduct = (product: Product): Product => ({
   harga: typeof product.harga === 'number' ? product.harga : 0,
   kategori: product.kategori ?? null,
   deskripsi: product.deskripsi ?? null,
-  stok: typeof product.stok === 'number' ? product.stok : null,
+  isTrending: product.isTrending ?? false,
+  isSale: product.isSale ?? false,
+  isHeroFeatured: product.isHeroFeatured ?? false,
+  isVisible: product.isVisible ?? true,
   media: Array.isArray(product.media) ? product.media : [],
 });
 

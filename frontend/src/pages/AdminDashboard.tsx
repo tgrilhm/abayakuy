@@ -3,9 +3,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState, useRef } from 'react';
-import { Search, Plus, Edit, Trash2, ChevronLeft, ChevronRight, X, Upload, Loader2, PlayCircle } from 'lucide-react';
-import { Product, Media } from '../types';
+import React, { useState, useRef, useEffect } from 'react';
+import { Search, Plus, Edit, Trash2, X, Upload, Loader2, PlayCircle, Package, Layout } from 'lucide-react';
+import { Product, KATEGORI_OPTIONS, UKURAN_OPTIONS, Ukuran, Kategori } from '../types';
 import { api } from '../api';
 import { motion, AnimatePresence } from 'motion/react';
 
@@ -20,12 +20,11 @@ interface ProductFormData {
   nama: string;
   brand: string;
   bahan: string;
-  ukuran: string;
+  ukuran: Ukuran[];
   warna: string;
   harga: string;
-  kategori: string;
+  kategori: Kategori | '';
   deskripsi: string;
-  stok: string;
 }
 
 const emptyForm: ProductFormData = {
@@ -33,19 +32,72 @@ const emptyForm: ProductFormData = {
   nama: '',
   brand: '',
   bahan: '',
-  ukuran: '',
+  ukuran: [],
   warna: '',
   harga: '',
   kategori: '',
   deskripsi: '',
-  stok: '',
 };
 
 const MAX_TOTAL_UPLOAD_BYTES = 4 * 1024 * 1024;
 
+// ─── Field component for consistent styling ───
+function Field({
+  label,
+  required,
+  children,
+}: {
+  label: string;
+  required?: boolean;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="flex flex-col gap-1.5">
+      <label className="text-[10px] tracking-[0.18em] uppercase font-semibold text-stone-400 font-sans">
+        {label}
+        {required && <span className="text-stone-300 ml-0.5">*</span>}
+      </label>
+      {children}
+    </div>
+  );
+}
+
+const inputCls =
+  'w-full bg-stone-50 border border-stone-200 px-3 py-2.5 text-[13px] font-sans text-stone-800 placeholder-stone-300 focus:outline-none focus:border-stone-800 focus:bg-white transition-all duration-200';
+
+// ─── Reusable toggle row for the popover ───
+type ToggleColor = 'amber' | 'rose' | 'violet' | 'emerald';
+const COLOR_MAP: Record<ToggleColor, string> = {
+  amber:   'bg-amber-500 border-amber-500',
+  rose:    'bg-rose-500 border-rose-500',
+  violet:  'bg-violet-500 border-violet-500',
+  emerald: 'bg-emerald-500 border-emerald-500',
+};
+function ToggleRow({ label, sub, active, color, onClick }: {
+  label: string; sub?: string; active: boolean; color: ToggleColor; onClick: () => void;
+}) {
+  return (
+    <button onClick={onClick} className="w-full flex items-center justify-between px-3 py-2 hover:bg-stone-50 transition-colors gap-2">
+      <div className="flex flex-col items-start min-w-0">
+        <span className="font-sans text-[12px] text-stone-700 leading-tight">{label}</span>
+        {sub && <span className="font-sans text-[9px] text-stone-400 leading-tight">{sub}</span>}
+      </div>
+      <span className={`w-4 h-4 border flex items-center justify-center flex-shrink-0 transition-colors ${
+        active ? `${COLOR_MAP[color]} text-white` : 'border-stone-300'
+      }`}>
+        {active && (
+          <svg width="8" height="8" viewBox="0 0 8 8" fill="none">
+            <path d="M1 4l2 2 4-4" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
+        )}
+      </span>
+    </button>
+  );
+}
+
 export const AdminProductList: React.FC<AdminProductListProps> = ({ products, loading, onRefresh }) => {
   const [searchQuery, setSearchQuery] = useState('');
-  const [showModal, setShowModal] = useState(false);
+  const [showDrawer, setShowDrawer] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [formData, setFormData] = useState<ProductFormData>(emptyForm);
   const [newFiles, setNewFiles] = useState<File[]>([]);
@@ -55,15 +107,22 @@ export const AdminProductList: React.FC<AdminProductListProps> = ({ products, lo
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Filter products
-  const filtered = products.filter(p => {
+  // Lock body scroll when drawer is open
+  useEffect(() => {
+    document.body.style.overflow = showDrawer ? 'hidden' : '';
+    return () => { document.body.style.overflow = ''; };
+  }, [showDrawer]);
+
+  const filtered = products.filter((p) => {
     const q = searchQuery.toLowerCase();
-    return (p.kode || '').toLowerCase().includes(q) ||
+    return (
+      (p.kode || '').toLowerCase().includes(q) ||
       (p.nama || '').toLowerCase().includes(q) ||
       (p.brand || '').toLowerCase().includes(q) ||
       (p.bahan || '').toLowerCase().includes(q) ||
       (p.warna || '').toLowerCase().includes(q) ||
-      (p.kategori || '').toLowerCase().includes(q);
+      (p.kategori || '').toLowerCase().includes(q)
+    );
   });
 
   const showToast = (message: string, type: 'success' | 'error' = 'success') => {
@@ -71,39 +130,36 @@ export const AdminProductList: React.FC<AdminProductListProps> = ({ products, lo
     setTimeout(() => setToast(null), 3000);
   };
 
-  // Open Add Modal
-  const openAddModal = () => {
+  const openAddDrawer = () => {
     setEditingProduct(null);
     setFormData(emptyForm);
     setNewFiles([]);
     setDeletedMediaIds([]);
     setError('');
-    setShowModal(true);
+    setShowDrawer(true);
   };
 
-  // Open Edit Modal
-  const openEditModal = (product: Product) => {
+  const openEditDrawer = (product: Product) => {
     setEditingProduct(product);
     setFormData({
       kode: product.kode || '',
       nama: product.nama || '',
       brand: product.brand || '',
       bahan: product.bahan || '',
-      ukuran: (product.ukuran || []).join(', '),
+      ukuran: (product.ukuran || []) as Ukuran[],
       warna: product.warna || '',
       harga: String(product.harga ?? ''),
-      kategori: product.kategori || '',
+      kategori: (product.kategori as Kategori) || '',
       deskripsi: product.deskripsi || '',
-      stok: product.stok != null ? String(product.stok) : '',
     });
     setNewFiles([]);
     setDeletedMediaIds([]);
     setError('');
-    setShowModal(true);
+    setShowDrawer(true);
   };
 
-  const closeModal = () => {
-    setShowModal(false);
+  const closeDrawer = () => {
+    setShowDrawer(false);
     setEditingProduct(null);
     setFormData(emptyForm);
     setNewFiles([]);
@@ -111,54 +167,33 @@ export const AdminProductList: React.FC<AdminProductListProps> = ({ products, lo
     setError('');
   };
 
-  // Handle file selection
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files) return;
-
     const selected = Array.from(e.target.files);
-    const existingMediaCount = editingProduct
+    const existingCount = editingProduct
       ? (editingProduct.media?.length || 0) - deletedMediaIds.length
       : 0;
-    const totalCount = existingMediaCount + newFiles.length + selected.length;
+    const totalCount = existingCount + newFiles.length + selected.length;
 
     if (totalCount > 7) {
-      setError(`Maximum 7 files allowed. You can add ${7 - existingMediaCount - newFiles.length} more.`);
+      setError(`Max 7 files. You can add ${7 - existingCount - newFiles.length} more.`);
       e.target.value = '';
       return;
     }
 
-    const currentBytes = newFiles.reduce((sum, file) => sum + file.size, 0);
-    const selectedBytes = (selected as File[]).reduce((sum, file) => sum + file.size, 0);
-    const totalBytes = currentBytes + selectedBytes;
-
-    if (totalBytes > MAX_TOTAL_UPLOAD_BYTES) {
-      setError('Upload too large for Vercel. Please keep the total new upload under about 4 MB.');
+    const currentBytes = newFiles.reduce((s, f) => s + f.size, 0);
+    const selectedBytes = selected.reduce((s, f) => s + f.size, 0);
+    if (currentBytes + selectedBytes > MAX_TOTAL_UPLOAD_BYTES) {
+      setError('Total upload exceeds 4 MB limit.');
       e.target.value = '';
       return;
     }
 
-    setNewFiles(prev => [...prev, ...selected]);
+    setNewFiles((prev) => [...prev, ...selected]);
     setError('');
-    // Reset input value so the same file can be selected again
     e.target.value = '';
   };
 
-  // Remove a new file (not yet uploaded)
-  const removeNewFile = (index: number) => {
-    setNewFiles(prev => prev.filter((_, i) => i !== index));
-  };
-
-  // Mark existing media for deletion
-  const markMediaForDeletion = (mediaId: string) => {
-    setDeletedMediaIds(prev => [...prev, mediaId]);
-  };
-
-  // Undo media deletion
-  const undoMediaDeletion = (mediaId: string) => {
-    setDeletedMediaIds(prev => prev.filter(id => id !== mediaId));
-  };
-
-  // Submit form
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
@@ -170,23 +205,15 @@ export const AdminProductList: React.FC<AdminProductListProps> = ({ products, lo
       fd.append('nama', formData.nama);
       fd.append('brand', formData.brand);
       fd.append('bahan', formData.bahan);
-      fd.append('ukuran', JSON.stringify(formData.ukuran.split(',').map(s => s.trim()).filter(Boolean)));
+      fd.append('ukuran', JSON.stringify(formData.ukuran));
       fd.append('warna', formData.warna);
       fd.append('harga', formData.harga);
       if (formData.kategori) fd.append('kategori', formData.kategori);
       if (formData.deskripsi) fd.append('deskripsi', formData.deskripsi);
-      if (formData.stok) fd.append('stok', formData.stok);
-
-      // Append new files
-      newFiles.forEach(file => {
-        fd.append('media', file);
-      });
+      newFiles.forEach((file) => fd.append('media', file));
 
       if (editingProduct) {
-        // Include deleted media IDs
-        if (deletedMediaIds.length > 0) {
-          fd.append('deletedMedia', JSON.stringify(deletedMediaIds));
-        }
+        if (deletedMediaIds.length > 0) fd.append('deletedMedia', JSON.stringify(deletedMediaIds));
         await api.updateProduct(editingProduct.id, fd);
         showToast('Product updated successfully!');
       } else {
@@ -194,7 +221,7 @@ export const AdminProductList: React.FC<AdminProductListProps> = ({ products, lo
         showToast('Product created successfully!');
       }
 
-      closeModal();
+      closeDrawer();
       onRefresh();
     } catch (err: any) {
       setError(err.message || 'Failed to save product');
@@ -203,443 +230,489 @@ export const AdminProductList: React.FC<AdminProductListProps> = ({ products, lo
     }
   };
 
-  // Delete product
   const handleDelete = async (product: Product) => {
-    if (!window.confirm(`Delete product "${product.kode}"? This cannot be undone.`)) return;
-
+    if (!window.confirm(`Delete "${product.nama || product.kode}"? This cannot be undone.`)) return;
     try {
       await api.deleteProduct(product.id);
-      showToast('Product deleted successfully!');
+      showToast('Product deleted.');
       onRefresh();
     } catch (err: any) {
       showToast(err.message || 'Failed to delete product', 'error');
     }
   };
 
-  const getImageUrl = (product: Product) => {
-    const img = product.media?.find(m => m.type === 'image');
-    return img?.url || '';
+  const handleTogglePage = async (product: Product, flag: 'isTrending' | 'isSale' | 'isHeroFeatured' | 'isVisible') => {
+    try {
+      const newValue = !product[flag];
+      await api.updateProductPages(product.id, { [flag]: newValue });
+      const labels: Record<string, string> = {
+        isTrending: 'Trending Now',
+        isSale: 'Sale',
+        isHeroFeatured: 'Home Hero',
+        isVisible: 'Visibility',
+      };
+      showToast(newValue ? `Added to ${labels[flag]}` : `Removed from ${labels[flag]}`);
+      onRefresh();
+    } catch (err: any) {
+      showToast(err.message || 'Failed to update', 'error');
+    }
   };
 
+  const getImageUrl = (product: Product) => product.media?.find((m) => m.type === 'image')?.url || '';
+
+  const set = (key: keyof ProductFormData) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
+    setFormData((prev) => ({ ...prev, [key]: e.target.value }));
+
   return (
-      <div className="flex-grow p-6 md:p-12 overflow-auto">
-      {/* Toast */}
+    <div className="flex-grow overflow-auto bg-[#faf9f7]">
+      {/* ─── Toast ─── */}
       <AnimatePresence>
         {toast && (
           <motion.div
-            initial={{ opacity: 0, y: -20 }}
+            initial={{ opacity: 0, y: -12 }}
             animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            className={`fixed top-6 right-6 z-[200] px-6 py-3 text-sm font-medium shadow-lg ${
+            exit={{ opacity: 0, y: -12 }}
+            className={`fixed top-5 right-5 z-[300] px-5 py-3 text-[12px] font-sans font-medium tracking-wide border ${
               toast.type === 'success'
-                ? 'bg-green-50 text-green-800 border border-green-200'
-                : 'bg-red-50 text-red-800 border border-red-200'
+                ? 'bg-white text-stone-800 border-stone-200 shadow-md'
+                : 'bg-red-50 text-red-700 border-red-200'
             }`}
           >
-            {toast.message}
+            {toast.type === 'success' ? '✓ ' : '✕ '}{toast.message}
           </motion.div>
         )}
       </AnimatePresence>
 
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-10 gap-4">
-        <div>
-          <h2 className="text-3xl font-lexend mb-2">Product Catalog</h2>
-          <p className="text-on-surface-variant text-sm">Manage your abaya collection, prices, and inventory.</p>
+      {/* ─── Page Header ─── */}
+      <div className="px-8 pt-10 pb-6 border-b border-stone-200 bg-white">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <div>
+            <p className="text-[9px] tracking-[0.35em] uppercase text-stone-400 font-sans mb-1">Admin</p>
+            <h2 className="font-serif text-2xl text-stone-900">Product Catalog</h2>
+          </div>
+          <button
+            onClick={openAddDrawer}
+            className="flex items-center gap-2 bg-stone-900 text-white font-sans text-[11px] tracking-[0.2em] uppercase px-6 py-3 hover:bg-stone-700 transition-colors duration-300"
+          >
+            <Plus size={14} strokeWidth={2.5} />
+            Add Product
+          </button>
         </div>
-        <button
-          onClick={openAddModal}
-          className="bg-primary text-on-primary px-6 py-3 uppercase-label flex items-center gap-2 hover:bg-accent transition-colors"
-        >
-          <Plus size={18} />
-          Add New Product
-        </button>
-      </div>
 
-      {/* Filters */}
-      <div className="bg-surface-lowest p-4 border border-surface-high flex flex-col sm:flex-row gap-4 items-center mb-6">
-        <div className="relative w-full flex-grow">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant" size={18} />
+        {/* Search */}
+        <div className="mt-6 relative max-w-md">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-300" size={15} />
           <input
             type="text"
-            placeholder="Search by Kode, Brand, Bahan, or Warna..."
+            placeholder="Search by name, kode, brand, kategori..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 border-b border-surface-variant bg-transparent focus:outline-none focus:border-primary transition-colors text-sm"
+            className="w-full pl-9 pr-4 py-2.5 border border-stone-200 bg-stone-50 text-[13px] font-sans text-stone-700 placeholder-stone-300 focus:outline-none focus:border-stone-400 focus:bg-white transition-all duration-200"
           />
         </div>
-        <span className="text-xs text-on-surface-variant whitespace-nowrap">
-          {filtered.length} product{filtered.length !== 1 ? 's' : ''}
-        </span>
       </div>
 
-      {/* Table */}
-      <div className="bg-surface-lowest border border-surface-high overflow-hidden shadow-sm">
-        {loading ? (
-          <div className="flex items-center justify-center py-20">
-            <Loader2 size={24} className="animate-spin text-on-surface-variant" />
-          </div>
-        ) : filtered.length === 0 ? (
-          <div className="text-center py-20 text-on-surface-variant">
-            <p className="text-4xl mb-4">📦</p>
-            <p className="text-sm">{products.length === 0 ? 'No products yet. Click "Add New Product" to get started!' : 'No products match your search.'}</p>
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
-              <thead className="bg-surface-low border-b border-surface-high">
-                <tr>
-                  <th className="p-4 uppercase-label text-[10px]">Product</th>
-                  <th className="p-4 uppercase-label text-[10px]">Kode</th>
-                  <th className="p-4 uppercase-label text-[10px]">Kategori</th>
-                  <th className="p-4 uppercase-label text-[10px]">Bahan</th>
-                  <th className="p-4 uppercase-label text-[10px]">Warna</th>
-                  <th className="p-4 uppercase-label text-[10px]">Ukuran</th>
-                  <th className="p-4 uppercase-label text-[10px]">Harga</th>
-                  <th className="p-4 uppercase-label text-[10px]">Stok</th>
-                  <th className="p-4 uppercase-label text-[10px] text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-surface-high">
-                {filtered.map((product) => (
-                  <tr key={product.id} className="hover:bg-surface transition-colors group">
-                    <td className="p-4 flex items-center gap-4">
-                      <div className="w-12 h-16 bg-surface-high overflow-hidden flex-shrink-0">
-                        {getImageUrl(product) ? (
-                          <img src={getImageUrl(product)} alt="" className="w-full h-full object-cover" />
-                        ) : (
-                          <div className="w-full h-full flex items-center justify-center text-on-surface-variant text-lg">📷</div>
-                        )}
-                      </div>
-                      <div>
-                        <p className="font-lexend text-sm font-medium">{product.nama || product.brand || 'Unknown'}</p>
-                        <p className="text-xs text-on-surface-variant mt-1">{product.kode || 'Untitled'}</p>
-                      </div>
-                    </td>
-                    <td className="p-4 text-sm">{product.kode || '—'}</td>
-                    <td className="p-4 text-sm">{product.kategori || '—'}</td>
-                    <td className="p-4 text-sm">{product.bahan || '—'}</td>
-                    <td className="p-4 text-sm">{product.warna || '—'}</td>
-                    <td className="p-4">
-                      <div className="flex gap-1 flex-wrap">
-                        {(product.ukuran || []).map(size => (
-                          <span key={size} className="px-2 py-0.5 text-[10px] uppercase font-bold bg-surface-highest">{size}</span>
-                        ))}
-                      </div>
-                    </td>
-                    <td className="p-4 text-sm font-medium">EGP {Number(product.harga ?? 0).toFixed(2)}</td>
-                    <td className="p-4 text-sm">
-                      {product.stok != null ? (
-                        <span className={product.stok === 0 ? 'text-red-500' : 'text-on-surface'}>
-                          {product.stok}
-                        </span>
-                      ) : '—'}
-                    </td>
-                    <td className="p-4 text-right opacity-0 group-hover:opacity-100 transition-opacity">
-                      <button
-                        onClick={() => openEditModal(product)}
-                        className="p-2 text-on-surface-variant hover:text-primary"
-                        title="Edit"
-                      >
-                        <Edit size={16} />
-                      </button>
-                      <button
-                        onClick={() => handleDelete(product)}
-                        className="p-2 text-red-400 hover:text-red-600"
-                        title="Delete"
-                      >
-                        <Trash2 size={16} />
-                      </button>
-                    </td>
+      {/* ─── Table ─── */}
+      <div className="px-8 py-6">
+        <div className="bg-white border border-stone-200">
+          {loading ? (
+            <div className="flex items-center justify-center py-24">
+              <Loader2 size={22} className="animate-spin text-stone-300" />
+            </div>
+          ) : filtered.length === 0 ? (
+            <div className="text-center py-24 text-stone-400">
+              <Package size={32} className="mx-auto mb-4 opacity-30" />
+              <p className="font-sans text-sm">
+                {products.length === 0 ? 'No products yet. Add your first product.' : 'No results for your search.'}
+              </p>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-left">
+                <thead>
+                  <tr className="border-b border-stone-100">
+                    {['Product', 'Kode', 'Kategori', 'Bahan', 'Warna', 'Ukuran', 'Harga', ''].map((h) => (
+                      <th key={h} className="px-4 py-3 text-[9px] tracking-[0.2em] uppercase text-stone-400 font-sans font-semibold whitespace-nowrap">
+                        {h}
+                      </th>
+                    ))}
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {filtered.map((product) => (
+                    <tr key={product.id} className="border-b border-stone-50 hover:bg-stone-50 transition-colors group">
+                      <td className="px-4 py-3">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-13 bg-stone-100 overflow-hidden flex-shrink-0 aspect-[3/4]">
+                            {getImageUrl(product) ? (
+                              <img src={getImageUrl(product)} alt="" className="w-full h-full object-cover" />
+                            ) : (
+                              <div className="w-full h-full flex items-center justify-center text-stone-300 text-xs">—</div>
+                            )}
+                          </div>
+                          <div>
+                            <p className="font-sans text-[13px] font-medium text-stone-800 leading-tight">
+                              {product.nama || product.brand || 'Untitled'}
+                            </p>
+                            <p className="font-sans text-[11px] text-stone-400 mt-0.5">{product.kode || '—'}</p>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-4 py-3 font-sans text-[12px] text-stone-600">{product.kode || '—'}</td>
+                      <td className="px-4 py-3">
+                        {product.kategori ? (
+                          <span className="font-sans text-[10px] tracking-[0.1em] uppercase bg-stone-100 text-stone-600 px-2 py-1">
+                            {product.kategori}
+                          </span>
+                        ) : <span className="text-stone-300 text-[12px]">—</span>}
+                      </td>
+                      <td className="px-4 py-3 font-sans text-[12px] text-stone-600">{product.bahan || '—'}</td>
+                      <td className="px-4 py-3 font-sans text-[12px] text-stone-600">{product.warna || '—'}</td>
+                      <td className="px-4 py-3">
+                        <div className="flex gap-1 flex-wrap">
+                          {(product.ukuran || []).map((size) => (
+                            <span key={size} className="font-sans text-[9px] tracking-widest uppercase bg-stone-900 text-white px-1.5 py-0.5">
+                              {size}
+                            </span>
+                          ))}
+                        </div>
+                      </td>
+                      <td className="px-4 py-3 font-sans text-[13px] font-medium text-stone-800">
+                        EGP {Number(product.harga ?? 0).toFixed(2)}
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity justify-end">
+
+                          {/* ── Page badges (always visible when active) ── */}
+                          {product.isTrending && (
+                            <span className="font-sans text-[8px] tracking-[0.1em] uppercase bg-amber-100 text-amber-700 px-1.5 py-0.5 border border-amber-200">
+                              Trending
+                            </span>
+                          )}
+                          {product.isSale && (
+                            <span className="font-sans text-[8px] tracking-[0.1em] uppercase bg-rose-100 text-rose-700 px-1.5 py-0.5 border border-rose-200">
+                              Sale
+                            </span>
+                          )}
+                          {product.isHeroFeatured && (
+                            <span className="font-sans text-[8px] tracking-[0.1em] uppercase bg-violet-100 text-violet-700 px-1.5 py-0.5 border border-violet-200">
+                              Hero
+                            </span>
+                          )}
+                          {!product.isVisible && (
+                            <span className="font-sans text-[8px] tracking-[0.1em] uppercase bg-stone-100 text-stone-500 px-1.5 py-0.5 border border-stone-300">
+                              Hidden
+                            </span>
+                          )}
+
+                          {/* ── Assign to page button + popover ── */}
+                          <div className="relative group/pages">
+                            <button
+                              className="p-1.5 text-stone-400 hover:text-stone-800 hover:bg-stone-100 transition-colors"
+                              title="Assign to page"
+                            >
+                              <Layout size={14} />
+                            </button>
+                            {/* Popover */}
+                            <div className="absolute right-0 top-full mt-1.5 z-20 bg-white border border-stone-200 shadow-lg w-52 hidden group-hover/pages:block">
+                              <div className="px-3 py-2 border-b border-stone-100">
+                                <p className="font-sans text-[9px] tracking-[0.2em] uppercase text-stone-400">Assign to page</p>
+                              </div>
+                              <div className="py-1">
+                                <ToggleRow label="Trending Now" active={product.isTrending} color="amber" onClick={() => handleTogglePage(product, 'isTrending')} />
+                                <ToggleRow label="Sale" active={product.isSale} color="rose" onClick={() => handleTogglePage(product, 'isSale')} />
+                              </div>
+                              <div className="border-t border-stone-100 py-1">
+                                <ToggleRow label="Home Hero" sub="Nama tampil di hero" active={product.isHeroFeatured} color="violet" onClick={() => handleTogglePage(product, 'isHeroFeatured')} />
+                                <ToggleRow label="Visible" sub="Tampil di katalog" active={product.isVisible} color="emerald" onClick={() => handleTogglePage(product, 'isVisible')} />
+                              </div>
+                            </div>
+                          </div>
+
+                          <button
+                            onClick={() => openEditDrawer(product)}
+                            className="p-1.5 text-stone-400 hover:text-stone-800 hover:bg-stone-100 transition-colors"
+                            title="Edit"
+                          >
+                            <Edit size={14} />
+                          </button>
+                          <button
+                            onClick={() => handleDelete(product)}
+                            className="p-1.5 text-stone-400 hover:text-red-600 hover:bg-red-50 transition-colors"
+                            title="Delete"
+                          >
+                            <Trash2 size={14} />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+          <div className="px-4 py-3 border-t border-stone-100 flex justify-between items-center">
+            <span className="font-sans text-[11px] text-stone-400">
+              {filtered.length} of {products.length} products
+            </span>
           </div>
-        )}
-        <div className="p-4 border-t border-surface-high flex justify-between items-center text-xs text-on-surface-variant">
-          <span>Showing {filtered.length} of {products.length} products</span>
         </div>
       </div>
 
-      {/* Modal */}
+      {/* ─── Side Drawer ─── */}
       <AnimatePresence>
-        {showModal && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[100] flex items-start justify-center bg-black/50 backdrop-blur-sm p-4 pt-16 overflow-y-auto"
-            onClick={(e) => { if (e.target === e.currentTarget) closeModal(); }}
-          >
+        {showDrawer && (
+          <>
+            {/* Dim overlay — solid, no blur */}
             <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: 20 }}
-              className="bg-surface-lowest border border-surface-high w-full max-w-2xl shadow-lg mb-12"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              className="fixed inset-0 z-[100] bg-black/40"
+              onClick={closeDrawer}
+            />
+
+            {/* Drawer panel */}
+            <motion.aside
+              initial={{ x: '100%' }}
+              animate={{ x: 0 }}
+              exit={{ x: '100%' }}
+              transition={{ type: 'tween', duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+              className="fixed top-0 right-0 h-full z-[110] w-full max-w-[560px] bg-white flex flex-col shadow-2xl"
             >
-              {/* Modal Header */}
-              <div className="flex justify-between items-center p-6 border-b border-surface-high">
-                <h3 className="text-xl font-lexend">{editingProduct ? 'Edit Product' : 'Add New Product'}</h3>
-                <button onClick={closeModal} className="p-2 text-on-surface-variant hover:text-primary">
-                  <X size={20} />
+              {/* Drawer Header */}
+              <div className="flex items-center justify-between px-8 py-6 border-b border-stone-100 flex-shrink-0">
+                <div>
+                  <p className="text-[9px] tracking-[0.35em] uppercase text-stone-400 font-sans mb-0.5">
+                    {editingProduct ? 'Editing' : 'New Entry'}
+                  </p>
+                  <h3 className="font-serif text-xl text-stone-900">
+                    {editingProduct ? (editingProduct.nama || editingProduct.kode || 'Product') : 'Add Product'}
+                  </h3>
+                </div>
+                <button
+                  onClick={closeDrawer}
+                  className="w-8 h-8 flex items-center justify-center text-stone-400 hover:text-stone-800 hover:bg-stone-100 transition-colors"
+                  aria-label="Close"
+                >
+                  <X size={18} />
                 </button>
               </div>
 
-              {/* Modal Body */}
-              <form onSubmit={handleSubmit} className="p-6 space-y-6">
-                {/* Kode */}
-                <div>
-                  <label className="uppercase-label text-[10px] mb-1 block">Kode *</label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="e.g. ABY-100"
-                    value={formData.kode}
-                    onChange={(e) => setFormData(prev => ({ ...prev, kode: e.target.value }))}
-                    className="w-full border-b border-surface-variant py-2 focus:outline-none focus:border-primary text-sm bg-transparent"
-                  />
-                </div>
+              {/* Drawer Body — scrollable */}
+              <form onSubmit={handleSubmit} className="flex flex-col flex-1 min-h-0">
+                <div className="flex-1 overflow-y-auto px-8 py-6 space-y-5">
 
-                {/* Nama */}
-                <div>
-                  <label className="uppercase-label text-[10px] mb-1 block">Nama (Display Name)</label>
-                  <input
-                    type="text"
-                    placeholder="e.g. Abaya Nida Premium Hitam"
-                    value={formData.nama}
-                    onChange={(e) => setFormData(prev => ({ ...prev, nama: e.target.value }))}
-                    className="w-full border-b border-surface-variant py-2 focus:outline-none focus:border-primary text-sm bg-transparent"
-                  />
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  {/* Brand */}
-                  <div>
-                    <label className="uppercase-label text-[10px] mb-1 block">Brand *</label>
-                    <input
-                      type="text"
-                      required
-                      placeholder="e.g. ABAYAKUY"
-                      value={formData.brand}
-                      onChange={(e) => setFormData(prev => ({ ...prev, brand: e.target.value }))}
-                      className="w-full border-b border-surface-variant py-2 bg-transparent text-sm focus:outline-none focus:border-primary"
-                    />
+                  {/* Row: Kode + Nama */}
+                  <div className="grid grid-cols-2 gap-4">
+                    <Field label="Kode" required>
+                      <input type="text" required placeholder="ABY-100" value={formData.kode} onChange={set('kode')} className={inputCls} />
+                    </Field>
+                    <Field label="Nama">
+                      <input type="text" placeholder="Display name" value={formData.nama} onChange={set('nama')} className={inputCls} />
+                    </Field>
                   </div>
-                  {/* Bahan */}
-                  <div>
-                    <label className="uppercase-label text-[10px] mb-1 block">Bahan *</label>
-                    <input
-                      type="text"
-                      required
-                      placeholder="e.g. Premium Nida"
-                      value={formData.bahan}
-                      onChange={(e) => setFormData(prev => ({ ...prev, bahan: e.target.value }))}
-                      className="w-full border-b border-surface-variant py-2 bg-transparent text-sm focus:outline-none focus:border-primary"
-                    />
+
+                  {/* Row: Brand + Bahan */}
+                  <div className="grid grid-cols-2 gap-4">
+                    <Field label="Brand" required>
+                      <input type="text" required placeholder="ABAYAKUY" value={formData.brand} onChange={set('brand')} className={inputCls} />
+                    </Field>
+                    <Field label="Bahan" required>
+                      <input type="text" required placeholder="Premium Nida" value={formData.bahan} onChange={set('bahan')} className={inputCls} />
+                    </Field>
                   </div>
-                </div>
 
-                <div className="grid grid-cols-2 gap-4">
-                  {/* Warna */}
-                  <div>
-                    <label className="uppercase-label text-[10px] mb-1 block">Warna *</label>
-                    <input
-                      type="text"
-                      required
-                      placeholder="e.g. Hitam"
-                      value={formData.warna}
-                      onChange={(e) => setFormData(prev => ({ ...prev, warna: e.target.value }))}
-                      className="w-full border-b border-surface-variant py-2 bg-transparent text-sm focus:outline-none focus:border-primary"
-                    />
+                  {/* Row: Warna + Harga */}
+                  <div className="grid grid-cols-2 gap-4">
+                    <Field label="Warna" required>
+                      <input type="text" required placeholder="Hitam" value={formData.warna} onChange={set('warna')} className={inputCls} />
+                    </Field>
                   </div>
-                  {/* Harga */}
-                  <div>
-                    <label className="uppercase-label text-[10px] mb-1 block">Harga (EGP) *</label>
-                    <input
-                      type="number"
-                      step="0.01"
-                      required
-                      placeholder="0.00"
-                      value={formData.harga}
-                      onChange={(e) => setFormData(prev => ({ ...prev, harga: e.target.value }))}
-                      className="w-full border-b border-surface-variant py-2 bg-transparent text-sm focus:outline-none focus:border-primary"
-                    />
+
+                  {/* Row: Kategori + Stok */}
+                  <div className="grid grid-cols-2 gap-4">
+                    <Field label="Kategori">
+                      <select
+                        value={formData.kategori}
+                        onChange={(e) => setFormData((prev) => ({ ...prev, kategori: e.target.value as Kategori | '' }))}
+                        className={inputCls}
+                      >
+                        <option value="">— Select —</option>
+                        {KATEGORI_OPTIONS.map((k) => (
+                          <option key={k} value={k}>{k}</option>
+                        ))}
+                      </select>
+                    </Field>
+                    <Field label="Harga (EGP)" required>
+                      <input type="number" step="0.01" required placeholder="0.00" value={formData.harga} onChange={set('harga')} className={inputCls} />
+                    </Field>
                   </div>
-                </div>
 
-                <div className="grid grid-cols-2 gap-4">
-                  {/* Kategori */}
-                  <div>
-                    <label className="uppercase-label text-[10px] mb-1 block">Kategori</label>
-                    <input
-                      type="text"
-                      placeholder="e.g. Abaya Hitam"
-                      value={formData.kategori}
-                      onChange={(e) => setFormData(prev => ({ ...prev, kategori: e.target.value }))}
-                      className="w-full border-b border-surface-variant py-2 bg-transparent text-sm focus:outline-none focus:border-primary"
+                  {/* Ukuran — checkbox grid */}
+                  <Field label="Ukuran" required>
+                    <div className="grid grid-cols-3 gap-2 pt-1">
+                      {UKURAN_OPTIONS.map((size) => {
+                        const checked = formData.ukuran.includes(size);
+                        return (
+                          <label
+                            key={size}
+                            className={`flex items-center justify-center py-2.5 cursor-pointer border transition-all duration-150 font-sans text-[11px] tracking-[0.1em] uppercase select-none ${
+                              checked
+                                ? 'bg-stone-900 text-white border-stone-900'
+                                : 'bg-stone-50 text-stone-500 border-stone-200 hover:border-stone-500 hover:text-stone-800'
+                            }`}
+                          >
+                            <input
+                              type="checkbox"
+                              className="sr-only"
+                              checked={checked}
+                              onChange={() =>
+                                setFormData((prev) => ({
+                                  ...prev,
+                                  ukuran: checked
+                                    ? prev.ukuran.filter((u) => u !== size)
+                                    : [...prev.ukuran, size],
+                                }))
+                              }
+                            />
+                            {size}
+                          </label>
+                        );
+                      })}
+                    </div>
+                  </Field>
+
+                  {/* Deskripsi */}
+                  <Field label="Deskripsi">
+                    <textarea
+                      rows={3}
+                      placeholder="Describe the product..."
+                      value={formData.deskripsi}
+                      onChange={set('deskripsi')}
+                      className={`${inputCls} resize-none`}
                     />
-                  </div>
-                  {/* Stok */}
+                  </Field>
+
+                  {/* ─── Media ─── */}
                   <div>
-                    <label className="uppercase-label text-[10px] mb-1 block">Stok</label>
-                    <input
-                      type="number"
-                      min="0"
-                      placeholder="e.g. 10"
-                      value={formData.stok}
-                      onChange={(e) => setFormData(prev => ({ ...prev, stok: e.target.value }))}
-                      className="w-full border-b border-surface-variant py-2 bg-transparent text-sm focus:outline-none focus:border-primary"
-                    />
-                  </div>
-                </div>
+                    <p className="text-[10px] tracking-[0.18em] uppercase font-semibold text-stone-400 font-sans mb-3">
+                      Media <span className="text-stone-300 font-normal normal-case tracking-normal">— max 7 files</span>
+                    </p>
 
-                {/* Ukuran */}
-                <div>
-                  <label className="uppercase-label text-[10px] mb-1 block">Ukuran * (comma separated)</label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="e.g. S, M, L, XL"
-                    value={formData.ukuran}
-                    onChange={(e) => setFormData(prev => ({ ...prev, ukuran: e.target.value }))}
-                    className="w-full border-b border-surface-variant py-2 bg-transparent text-sm focus:outline-none focus:border-primary"
-                  />
-                </div>
+                    {/* Existing media */}
+                    {editingProduct && (editingProduct.media?.length || 0) > 0 && (
+                      <div className="mb-4">
+                        <p className="font-sans text-[11px] text-stone-400 mb-2">Current files</p>
+                        <div className="grid grid-cols-5 gap-2">
+                          {(editingProduct.media || []).map((media) => {
+                            const isDeleted = deletedMediaIds.includes(media.id);
+                            return (
+                              <div
+                                key={media.id}
+                                className={`relative aspect-square bg-stone-100 overflow-hidden border transition-all ${
+                                  isDeleted ? 'opacity-30 border-red-300' : 'border-stone-200'
+                                }`}
+                              >
+                                {media.type === 'video' ? (
+                                  <>
+                                    <video src={media.url} className="w-full h-full object-cover" />
+                                    <PlayCircle size={14} className="text-white absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 drop-shadow" />
+                                  </>
+                                ) : (
+                                  <img src={media.url} alt="" className="w-full h-full object-cover" />
+                                )}
+                                <button
+                                  type="button"
+                                  onClick={() => isDeleted ? setDeletedMediaIds(p => p.filter(id => id !== media.id)) : setDeletedMediaIds(p => [...p, media.id])}
+                                  className={`absolute top-1 right-1 w-4 h-4 flex items-center justify-center text-white text-[10px] leading-none ${
+                                    isDeleted ? 'bg-green-600' : 'bg-red-500 hover:bg-red-600'
+                                  }`}
+                                >
+                                  {isDeleted ? '↩' : '×'}
+                                </button>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
 
-                {/* Deskripsi */}
-                <div>
-                  <label className="uppercase-label text-[10px] mb-1 block">Deskripsi</label>
-                  <textarea
-                    rows={3}
-                    placeholder="Describe the product..."
-                    value={formData.deskripsi}
-                    onChange={(e) => setFormData(prev => ({ ...prev, deskripsi: e.target.value }))}
-                    className="w-full border-b border-surface-variant py-2 bg-transparent text-sm focus:outline-none focus:border-primary resize-none"
-                  />
-                </div>
-
-                {/* Media Upload */}
-                <div>
-                  <label className="uppercase-label text-[10px] mb-3 block">
-                    Media (Photos & Videos — max 7)
-                  </label>
-
-                  {/* Existing media (when editing) */}
-                  {editingProduct && (editingProduct.media?.length || 0) > 0 && (
-                    <div className="mb-4">
-                      <p className="text-xs text-on-surface-variant mb-2">Current media:</p>
-                      <div className="grid grid-cols-4 gap-2">
-                        {(editingProduct.media || []).map((media) => {
-                          const isDeleted = deletedMediaIds.includes(media.id);
-                          return (
-                            <div
-                              key={media.id}
-                              className={`relative aspect-square bg-surface-highest overflow-hidden border ${
-                                isDeleted ? 'opacity-30 border-red-400' : 'border-surface-high'
-                              }`}
-                            >
-                              {media.type === 'video' ? (
+                    {/* New files preview */}
+                    {newFiles.length > 0 && (
+                      <div className="mb-4">
+                        <p className="font-sans text-[11px] text-stone-400 mb-2">New files</p>
+                        <div className="grid grid-cols-5 gap-2">
+                          {newFiles.map((file, index) => (
+                            <div key={index} className="relative aspect-square bg-stone-100 overflow-hidden border border-stone-800/20">
+                              {file.type.startsWith('video/') ? (
                                 <>
-                                  <video src={media.url} className="w-full h-full object-cover" />
-                                  <PlayCircle size={16} className="text-white absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
+                                  <video src={URL.createObjectURL(file)} className="w-full h-full object-cover" />
+                                  <PlayCircle size={14} className="text-white absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 drop-shadow" />
                                 </>
                               ) : (
-                                <img src={media.url} alt="" className="w-full h-full object-cover" />
+                                <img src={URL.createObjectURL(file)} alt="" className="w-full h-full object-cover" />
                               )}
                               <button
                                 type="button"
-                                onClick={() => isDeleted ? undoMediaDeletion(media.id) : markMediaForDeletion(media.id)}
-                                className={`absolute top-1 right-1 w-5 h-5 flex items-center justify-center text-white text-xs ${
-                                  isDeleted ? 'bg-green-600' : 'bg-red-600/80 hover:bg-red-600'
-                                }`}
+                                onClick={() => setNewFiles((p) => p.filter((_, i) => i !== index))}
+                                className="absolute top-1 right-1 w-4 h-4 bg-red-500 hover:bg-red-600 flex items-center justify-center text-white text-[10px] leading-none"
                               >
-                                {isDeleted ? '↩' : '×'}
+                                ×
                               </button>
                             </div>
-                          );
-                        })}
+                          ))}
+                        </div>
                       </div>
+                    )}
+
+                    {/* Upload zone */}
+                    <input type="file" ref={fileInputRef} onChange={handleFileChange} accept="image/*,video/*" multiple className="hidden" />
+                    <button
+                      type="button"
+                      onClick={() => fileInputRef.current?.click()}
+                      className="w-full py-5 border border-dashed border-stone-300 hover:border-stone-800 hover:bg-stone-50 transition-all duration-300 flex flex-col items-center justify-center gap-2 text-stone-400 hover:text-stone-700 group"
+                    >
+                      <Upload size={18} className="group-hover:scale-110 transition-transform duration-200" />
+                      <span className="font-sans text-[11px] tracking-[0.1em] uppercase">Click to upload photos or videos</span>
+                    </button>
+                  </div>
+
+                  {/* Error */}
+                  {error && (
+                    <div className="font-sans text-[12px] text-red-600 bg-red-50 border border-red-200 px-4 py-3">
+                      {error}
                     </div>
                   )}
-
-                  {/* New files preview */}
-                  {newFiles.length > 0 && (
-                    <div className="mb-4">
-                      <p className="text-xs text-on-surface-variant mb-2">New files to upload:</p>
-                      <div className="grid grid-cols-4 gap-2">
-                        {newFiles.map((file, index) => (
-                          <div key={index} className="relative aspect-square bg-surface-highest overflow-hidden border border-primary/30">
-                            {file.type.startsWith('video/') ? (
-                              <>
-                                <video src={URL.createObjectURL(file)} className="w-full h-full object-cover" />
-                                <PlayCircle size={16} className="text-white absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
-                              </>
-                            ) : (
-                              <img src={URL.createObjectURL(file)} alt="" className="w-full h-full object-cover" />
-                            )}
-                            <button
-                              type="button"
-                              onClick={() => removeNewFile(index)}
-                              className="absolute top-1 right-1 w-5 h-5 bg-red-600/80 hover:bg-red-600 flex items-center justify-center text-white text-xs"
-                            >
-                              ×
-                            </button>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Upload button */}
-                  <input
-                    type="file"
-                    ref={fileInputRef}
-                    onChange={handleFileChange}
-                    accept="image/*,video/*"
-                    multiple
-                    className="hidden"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => fileInputRef.current?.click()}
-                    className="w-full py-4 border-2 border-dashed border-surface-high hover:border-primary transition-colors flex items-center justify-center gap-2 text-sm text-on-surface-variant"
-                  >
-                    <Upload size={16} />
-                    Click to add photos or videos
-                  </button>
                 </div>
 
-                {/* Error */}
-                {error && (
-                  <div className="text-sm text-red-600 bg-red-50 border border-red-200 px-4 py-3">
-                    {error}
-                  </div>
-                )}
-
-                {/* Actions */}
-                <div className="flex gap-4 pt-4">
+                {/* ─── Sticky Footer ─── */}
+                <div className="flex-shrink-0 px-8 py-5 border-t border-stone-100 bg-white flex gap-3">
                   <button
                     type="button"
-                    onClick={closeModal}
-                    className="flex-1 py-3 border border-surface-high uppercase-label text-[10px] hover:bg-surface-low transition-colors"
+                    onClick={closeDrawer}
+                    className="flex-1 py-3 border border-stone-200 text-stone-600 font-sans text-[11px] tracking-[0.2em] uppercase hover:bg-stone-50 hover:border-stone-400 transition-all duration-200"
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
                     disabled={saving}
-                    className="flex-1 py-3 bg-primary text-on-primary uppercase-label text-[10px] hover:bg-accent transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                    className="flex-2 flex-grow-[2] py-3 bg-stone-900 text-white font-sans text-[11px] tracking-[0.2em] uppercase hover:bg-stone-700 transition-colors duration-200 disabled:opacity-40 flex items-center justify-center gap-2"
                   >
                     {saving ? (
-                      <Loader2 size={14} className="animate-spin" />
+                      <><Loader2 size={13} className="animate-spin" /> Saving…</>
+                    ) : editingProduct ? (
+                      'Update Product'
                     ) : (
-                      editingProduct ? 'Update Product' : 'Create Product'
+                      'Create Product'
                     )}
                   </button>
                 </div>
               </form>
-            </motion.div>
-          </motion.div>
+            </motion.aside>
+          </>
         )}
       </AnimatePresence>
     </div>

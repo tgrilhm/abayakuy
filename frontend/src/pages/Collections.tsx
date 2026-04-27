@@ -1,15 +1,20 @@
 import { useState, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 import ProductCard from "../components/ProductCard";
 import { api } from "../api";
 import { Product } from "../types";
 
 export default function Collections() {
+  const [searchParams, setSearchParams] = useSearchParams();
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeKategori, setActiveKategori] = useState<string | null>(null);
+
+  // Read kategori from URL query param (?kategori=Outer+Abaya)
+  const activeKategori = searchParams.get("kategori");
 
   useEffect(() => {
     const fetchProducts = async () => {
+      setLoading(true);
       try {
         const result = await api.getProducts(
           activeKategori ? { kategori: activeKategori } : undefined
@@ -24,10 +29,12 @@ export default function Collections() {
     fetchProducts();
   }, [activeKategori]);
 
-  // Derive unique categories from loaded products for filter chips
-  const categories = Array.from(
-    new Set(products.map((p) => p.kategori).filter(Boolean) as string[])
-  );
+  const CATEGORIES = ["Outer Abaya", "Instant Abaya", "Luxe Kaftan", "Luxe Chiffon", "Velvet Abaya"];
+
+  const handleKategori = (cat: string | null) => {
+    if (cat) setSearchParams({ kategori: cat });
+    else setSearchParams({});
+  };
 
   return (
     <main className="pt-32 min-h-screen">
@@ -47,35 +54,33 @@ export default function Collections() {
       </section>
 
       {/* Category Filter Chips */}
-      {categories.length > 0 && (
-        <section className="max-w-container-max mx-auto px-gutter pb-8">
-          <div className="flex flex-wrap gap-2 justify-center">
+      <section className="max-w-container-max mx-auto px-gutter pb-8">
+        <div className="flex flex-wrap gap-2 justify-center">
+          <button
+            onClick={() => handleKategori(null)}
+            className={`font-sans text-[10px] tracking-[0.15em] uppercase px-5 py-2 border transition-all duration-300 ${
+              activeKategori === null
+                ? "bg-black text-white border-black"
+                : "bg-transparent text-stone-500 border-stone-300 hover:border-black hover:text-black"
+            }`}
+          >
+            All
+          </button>
+          {CATEGORIES.map((cat) => (
             <button
-              onClick={() => setActiveKategori(null)}
+              key={cat}
+              onClick={() => handleKategori(cat)}
               className={`font-sans text-[10px] tracking-[0.15em] uppercase px-5 py-2 border transition-all duration-300 ${
-                activeKategori === null
+                activeKategori === cat
                   ? "bg-black text-white border-black"
                   : "bg-transparent text-stone-500 border-stone-300 hover:border-black hover:text-black"
               }`}
             >
-              All
+              {cat}
             </button>
-            {categories.map((cat) => (
-              <button
-                key={cat}
-                onClick={() => setActiveKategori(cat)}
-                className={`font-sans text-[10px] tracking-[0.15em] uppercase px-5 py-2 border transition-all duration-300 ${
-                  activeKategori === cat
-                    ? "bg-black text-white border-black"
-                    : "bg-transparent text-stone-500 border-stone-300 hover:border-black hover:text-black"
-                }`}
-              >
-                {cat}
-              </button>
-            ))}
-          </div>
-        </section>
-      )}
+          ))}
+        </div>
+      </section>
 
       {/* Catalog Grid */}
       <section className="max-w-container-max mx-auto px-gutter pb-section-padding">

@@ -8,22 +8,42 @@ datasource db {
   directUrl = env("DIRECT_URL")
 }
 
-model Product {
-  id         String   @id @default(uuid()) @db.Uuid
-  kode       String?  @unique
-  nama       String?  // Display name
-  brand      String?
-  bahan      String?  // Material / Fabric
-  ukuran     String[] // Sizes array e.g. ["S", "M", "L"]
-  warna      String?  // Color (single text)
-  harga      Float?   // Price
-  kategori   String?  // Category e.g. "Abaya Hitam", "Abaya Warna"
-  deskripsi  String?  // Long description for product detail page
-  stok       Int?     // Stock quantity
-  created_at DateTime @default(now())
-  updated_at DateTime @updatedAt
+enum Kategori {
+  Outer_Abaya    @map("Outer Abaya")
+  Instant_Abaya  @map("Instant Abaya")
+  Luxe_Kaftan    @map("Luxe Kaftan")
+  Luxe_Chiffon   @map("Luxe Chiffon")
+  Velvet_Abaya   @map("Velvet Abaya")
+}
 
-  media Media[] // Multiple photos/videos
+enum Ukuran {
+  L
+  XL
+  XXL        @map("2XL")
+  XXXL       @map("3XL")
+  XXXXL      @map("4XL")
+  Free_Size  @map("Free Size")
+}
+
+model Product {
+  id               String     @id @default(uuid()) @db.Uuid
+  kode             String?    @unique
+  nama             String?    // Display name
+  brand            String?
+  bahan            String?    // Material / Fabric
+  ukuran           Ukuran[]   // Sizes enum array
+  warna            String?    // Color
+  harga            Float?     // Price
+  kategori         Kategori?  // Category enum
+  deskripsi        String?    // Long description
+  isTrending       Boolean    @default(false) // Show on Trending Now page
+  isSale           Boolean    @default(false) // Show on Sale page
+  isHeroFeatured   Boolean    @default(false) // Show name on Home hero image
+  isVisible        Boolean    @default(true)  // Show in catalog / storefront
+  created_at       DateTime   @default(now())
+  updated_at       DateTime   @updatedAt
+
+  media Media[]
 
   @@map("products")
 }
@@ -32,7 +52,7 @@ model Media {
   id         String   @id @default(uuid()) @db.Uuid
   url        String   // Public URL from Supabase Storage
   type       String   // "image" or "video"
-  order      Int      @default(0) // Display order
+  order      Int      @default(0)
   product_id String   @db.Uuid
   product    Product  @relation(fields: [product_id], references: [id], onDelete: Cascade)
   created_at DateTime @default(now())
