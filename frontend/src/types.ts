@@ -14,6 +14,34 @@ export type Kategori =
 
 export type Ukuran = 'L' | 'XL' | '2XL' | '3XL' | '4XL' | 'Free Size';
 
+export type Bahan =
+  | 'Premium Harrer'
+  | 'Tiktok'
+  | 'Harrer Suudi'
+  | 'Kursa'
+  | 'Siffon'
+  | 'Harrer'
+  | 'Velvet Bludru'
+  | 'Crepe'
+  | 'Satin';
+
+export type Warna =
+  | 'Hitam'
+  | 'Krem'
+  | 'Coffe'
+  | 'Mint'
+  | 'Biru'
+  | 'Abu-abu'
+  | 'Merah'
+  | 'Coklat'
+  | 'Putih'
+  | 'Kuning'
+  | 'Ungu'
+  | 'Hijau'
+  | 'Hijau Botol'
+  | 'Broken White'
+  | 'Emerald';
+
 export const KATEGORI_OPTIONS: Kategori[] = [
   'Outer Abaya',
   'Instant Abaya',
@@ -26,14 +54,44 @@ export const UKURAN_OPTIONS: Ukuran[] = [
   'L', 'XL', '2XL', '3XL', '4XL', 'Free Size',
 ];
 
+export const BAHAN_OPTIONS: Bahan[] = [
+  'Premium Harrer',
+  'Tiktok',
+  'Harrer Suudi',
+  'Kursa',
+  'Siffon',
+  'Harrer',
+  'Velvet Bludru',
+  'Crepe',
+  'Satin',
+];
+
+export const WARNA_OPTIONS: Warna[] = [
+  'Hitam',
+  'Krem',
+  'Coffe',
+  'Mint',
+  'Biru',
+  'Abu-abu',
+  'Merah',
+  'Coklat',
+  'Putih',
+  'Kuning',
+  'Ungu',
+  'Hijau',
+  'Hijau Botol',
+  'Broken White',
+  'Emerald',
+];
+
 export interface Product {
   id: string;
   kode: string | null;
   nama: string | null;
   brand: string | null;
-  bahan: string | null;
+  bahan: Bahan | null;
   ukuran: Ukuran[] | null;
-  warna: string | null;
+  warna: Warna | null;
   harga: number | null;
   kategori: Kategori | null;
   deskripsi: string | null;

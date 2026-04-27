@@ -25,14 +25,44 @@ enum Ukuran {
   Free_Size  @map("Free Size")
 }
 
+enum Bahan {
+  Premium_Harrer  @map("Premium Harrer")
+  Tiktok          @map("Tiktok")
+  Harrer_Suudi    @map("Harrer Suudi")
+  Kursa           @map("Kursa")
+  Siffon          @map("Siffon")
+  Harrer          @map("Harrer")
+  Velvet_Bludru   @map("Velvet Bludru")
+  Crepe           @map("Crepe")
+  Satin           @map("Satin")
+}
+
+enum Warna {
+  Hitam         @map("Hitam")
+  Krem          @map("Krem")
+  Coffe         @map("Coffe")
+  Mint          @map("Mint")
+  Biru          @map("Biru")
+  Abu_abu       @map("Abu-abu")
+  Merah         @map("Merah")
+  Coklat        @map("Coklat")
+  Putih         @map("Putih")
+  Kuning        @map("Kuning")
+  Ungu          @map("Ungu")
+  Hijau         @map("Hijau")
+  Hijau_Botol   @map("Hijau Botol")
+  Broken_White  @map("Broken White")
+  Emerald       @map("Emerald")
+}
+
 model Product {
   id               String     @id @default(uuid()) @db.Uuid
   kode             String?    @unique
   nama             String?    // Display name
   brand            String?
-  bahan            String?    // Material / Fabric
+  bahan            Bahan?     // Material / Fabric (enum)
   ukuran           Ukuran[]   // Sizes enum array
-  warna            String?    // Color
+  warna            Warna?     // Color (enum)
   harga            Float?     // Price
   kategori         Kategori?  // Category enum
   deskripsi        String?    // Long description

@@ -5,7 +5,7 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { Search, Plus, Edit, Trash2, X, Upload, Loader2, PlayCircle, Package, Layout } from 'lucide-react';
-import { Product, KATEGORI_OPTIONS, UKURAN_OPTIONS, Ukuran, Kategori } from '../types';
+import { Product, KATEGORI_OPTIONS, UKURAN_OPTIONS, BAHAN_OPTIONS, WARNA_OPTIONS, Ukuran, Kategori, Bahan, Warna } from '../types';
 import { api } from '../api';
 import { motion, AnimatePresence } from 'motion/react';
 
@@ -19,9 +19,9 @@ interface ProductFormData {
   kode: string;
   nama: string;
   brand: string;
-  bahan: string;
+  bahan: Bahan | '';
   ukuran: Ukuran[];
-  warna: string;
+  warna: Warna | '';
   harga: string;
   kategori: Kategori | '';
   deskripsi: string;
@@ -145,9 +145,9 @@ export const AdminProductList: React.FC<AdminProductListProps> = ({ products, lo
       kode: product.kode || '',
       nama: product.nama || '',
       brand: product.brand || '',
-      bahan: product.bahan || '',
+      bahan: (product.bahan as Bahan) || '',
       ukuran: (product.ukuran || []) as Ukuran[],
-      warna: product.warna || '',
+      warna: (product.warna as Warna) || '',
       harga: String(product.harga ?? ''),
       kategori: (product.kategori as Kategori) || '',
       deskripsi: product.deskripsi || '',
@@ -340,7 +340,7 @@ export const AdminProductList: React.FC<AdminProductListProps> = ({ products, lo
                 </thead>
                 <tbody>
                   {filtered.map((product) => (
-                    <tr key={product.id} className="border-b border-stone-50 hover:bg-stone-50 transition-colors group">
+                    <tr key={product.id} className="border-b border-stone-50 hover:bg-stone-50 transition-colors">
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-3">
                           <div className="w-10 h-13 bg-stone-100 overflow-hidden flex-shrink-0 aspect-[3/4]">
@@ -381,37 +381,39 @@ export const AdminProductList: React.FC<AdminProductListProps> = ({ products, lo
                         EGP {Number(product.harga ?? 0).toFixed(2)}
                       </td>
                       <td className="px-4 py-3">
-                        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity justify-end">
+                        <div className="flex items-center gap-1 justify-end">
 
-                          {/* ── Page badges (always visible when active) ── */}
-                          {product.isTrending && (
-                            <span className="font-sans text-[8px] tracking-[0.1em] uppercase bg-amber-100 text-amber-700 px-1.5 py-0.5 border border-amber-200">
-                              Trending
-                            </span>
-                          )}
-                          {product.isSale && (
-                            <span className="font-sans text-[8px] tracking-[0.1em] uppercase bg-rose-100 text-rose-700 px-1.5 py-0.5 border border-rose-200">
-                              Sale
-                            </span>
-                          )}
-                          {product.isHeroFeatured && (
-                            <span className="font-sans text-[8px] tracking-[0.1em] uppercase bg-violet-100 text-violet-700 px-1.5 py-0.5 border border-violet-200">
-                              Hero
-                            </span>
-                          )}
-                          {!product.isVisible && (
-                            <span className="font-sans text-[8px] tracking-[0.1em] uppercase bg-stone-100 text-stone-500 px-1.5 py-0.5 border border-stone-300">
-                              Hidden
-                            </span>
-                          )}
+                          {/* ── Page badges ── */}
+                          <div className="flex items-center gap-1 mr-1">
+                            {product.isHeroFeatured && (
+                              <span className="font-sans text-[8px] tracking-[0.1em] uppercase bg-violet-100 text-violet-700 px-1.5 py-0.5 border border-violet-200">
+                                Hero
+                              </span>
+                            )}
+                            {product.isTrending && (
+                              <span className="font-sans text-[8px] tracking-[0.1em] uppercase bg-amber-100 text-amber-700 px-1.5 py-0.5 border border-amber-200">
+                                Trending
+                              </span>
+                            )}
+                            {product.isSale && (
+                              <span className="font-sans text-[8px] tracking-[0.1em] uppercase bg-rose-100 text-rose-700 px-1.5 py-0.5 border border-rose-200">
+                                Sale
+                              </span>
+                            )}
+                            {!product.isVisible && (
+                              <span className="font-sans text-[8px] tracking-[0.1em] uppercase bg-stone-100 text-stone-500 px-1.5 py-0.5 border border-stone-300">
+                                Hidden
+                              </span>
+                            )}
+                          </div>
 
                           {/* ── Assign to page button + popover ── */}
                           <div className="relative group/pages">
                             <button
-                              className="p-1.5 text-stone-400 hover:text-stone-800 hover:bg-stone-100 transition-colors"
+                              className="w-8 h-8 flex items-center justify-center rounded border border-stone-200 bg-white text-stone-500 hover:border-stone-900 hover:text-stone-900 hover:bg-stone-50 transition-all duration-150"
                               title="Assign to page"
                             >
-                              <Layout size={14} />
+                              <Layout size={13} />
                             </button>
                             {/* Popover */}
                             <div className="absolute right-0 top-full mt-1.5 z-20 bg-white border border-stone-200 shadow-lg w-52 hidden group-hover/pages:block">
@@ -431,17 +433,17 @@ export const AdminProductList: React.FC<AdminProductListProps> = ({ products, lo
 
                           <button
                             onClick={() => openEditDrawer(product)}
-                            className="p-1.5 text-stone-400 hover:text-stone-800 hover:bg-stone-100 transition-colors"
+                            className="w-8 h-8 flex items-center justify-center rounded border border-stone-200 bg-white text-stone-500 hover:border-stone-900 hover:text-stone-900 hover:bg-stone-50 transition-all duration-150"
                             title="Edit"
                           >
-                            <Edit size={14} />
+                            <Edit size={13} />
                           </button>
                           <button
                             onClick={() => handleDelete(product)}
-                            className="p-1.5 text-stone-400 hover:text-red-600 hover:bg-red-50 transition-colors"
+                            className="w-8 h-8 flex items-center justify-center rounded border border-red-100 bg-white text-red-400 hover:border-red-500 hover:text-red-600 hover:bg-red-50 transition-all duration-150"
                             title="Delete"
                           >
-                            <Trash2 size={14} />
+                            <Trash2 size={13} />
                           </button>
                         </div>
                       </td>
@@ -520,14 +522,34 @@ export const AdminProductList: React.FC<AdminProductListProps> = ({ products, lo
                       <input type="text" required placeholder="ABAYAKUY" value={formData.brand} onChange={set('brand')} className={inputCls} />
                     </Field>
                     <Field label="Bahan" required>
-                      <input type="text" required placeholder="Premium Nida" value={formData.bahan} onChange={set('bahan')} className={inputCls} />
+                      <select
+                        required
+                        value={formData.bahan}
+                        onChange={(e) => setFormData((prev) => ({ ...prev, bahan: e.target.value as Bahan | '' }))}
+                        className={inputCls}
+                      >
+                        <option value="">— Pilih bahan —</option>
+                        {BAHAN_OPTIONS.map((b) => (
+                          <option key={b} value={b}>{b}</option>
+                        ))}
+                      </select>
                     </Field>
                   </div>
 
                   {/* Row: Warna + Harga */}
                   <div className="grid grid-cols-2 gap-4">
                     <Field label="Warna" required>
-                      <input type="text" required placeholder="Hitam" value={formData.warna} onChange={set('warna')} className={inputCls} />
+                      <select
+                        required
+                        value={formData.warna}
+                        onChange={(e) => setFormData((prev) => ({ ...prev, warna: e.target.value as Warna | '' }))}
+                        className={inputCls}
+                      >
+                        <option value="">— Pilih warna —</option>
+                        {WARNA_OPTIONS.map((w) => (
+                          <option key={w} value={w}>{w}</option>
+                        ))}
+                      </select>
                     </Field>
                   </div>
 

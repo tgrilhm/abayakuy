@@ -21,6 +21,36 @@ const UKURAN_MAP = {
   'Free Size': 'Free_Size',
 };
 
+const BAHAN_MAP = {
+  'Premium Harrer': 'Premium_Harrer',
+  'Tiktok':         'Tiktok',
+  'Harrer Suudi':   'Harrer_Suudi',
+  'Kursa':          'Kursa',
+  'Siffon':         'Siffon',
+  'Harrer':         'Harrer',
+  'Velvet Bludru':  'Velvet_Bludru',
+  'Crepe':          'Crepe',
+  'Satin':          'Satin',
+};
+
+const WARNA_MAP = {
+  'Hitam':        'Hitam',
+  'Krem':         'Krem',
+  'Coffe':        'Coffe',
+  'Mint':         'Mint',
+  'Biru':         'Biru',
+  'Abu-abu':      'Abu_abu',
+  'Merah':        'Merah',
+  'Coklat':       'Coklat',
+  'Putih':        'Putih',
+  'Kuning':       'Kuning',
+  'Ungu':         'Ungu',
+  'Hijau':        'Hijau',
+  'Hijau Botol':  'Hijau_Botol',
+  'Broken White': 'Broken_White',
+  'Emerald':      'Emerald',
+};
+
 // Reverse map: Prisma enum key → display string (for query filtering)
 const KATEGORI_REVERSE = Object.fromEntries(
   Object.entries(KATEGORI_MAP).map(([k, v]) => [v, k])
@@ -28,9 +58,17 @@ const KATEGORI_REVERSE = Object.fromEntries(
 
 function toKategoriEnum(value) {
   if (!value) return null;
-  const mapped = KATEGORI_MAP[value];
-  if (!mapped) return null;
-  return mapped;
+  return KATEGORI_MAP[value] || null;
+}
+
+function toBahanEnum(value) {
+  if (!value) return null;
+  return BAHAN_MAP[value] || null;
+}
+
+function toWarnaEnum(value) {
+  if (!value) return null;
+  return WARNA_MAP[value] || null;
 }
 
 function toUkuranEnum(values) {
@@ -68,9 +106,9 @@ export const createProduct = async (req, res, next) => {
         kode,
         nama: nama || null,
         brand,
-        bahan,
+        bahan: toBahanEnum(bahan),
         ukuran: parsedUkuran,
-        warna,
+        warna: toWarnaEnum(warna),
         harga: parseFloat(harga),
         kategori: toKategoriEnum(kategori),
         deskripsi: deskripsi || null,
@@ -193,9 +231,9 @@ export const updateProduct = async (req, res, next) => {
         kode:      kode      !== undefined ? kode                    : existingProduct.kode,
         nama:      nama      !== undefined ? nama || null            : existingProduct.nama,
         brand:     brand     !== undefined ? brand                   : existingProduct.brand,
-        bahan:     bahan     !== undefined ? bahan                   : existingProduct.bahan,
+        bahan:     bahan     !== undefined ? toBahanEnum(bahan)       : existingProduct.bahan,
         ukuran:    ukuran    !== undefined ? parseUkuranInput(ukuran): existingProduct.ukuran,
-        warna:     warna     !== undefined ? warna                   : existingProduct.warna,
+        warna:     warna     !== undefined ? toWarnaEnum(warna)       : existingProduct.warna,
         harga:     harga     !== undefined ? parseFloat(harga)       : existingProduct.harga,
         kategori:  kategori  !== undefined ? toKategoriEnum(kategori): existingProduct.kategori,
         deskripsi: deskripsi !== undefined ? deskripsi || null       : existingProduct.deskripsi,
