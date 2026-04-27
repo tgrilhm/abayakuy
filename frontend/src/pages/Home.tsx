@@ -44,10 +44,10 @@ function HeroSlider({ heroProduct }: { heroProduct: Product | null }) {
       {/* Text overlay */}
       <div className="absolute bottom-14 left-10 md:left-16 flex flex-col items-start z-10 max-w-lg">
         <p className="font-sans text-[9px] tracking-[0.5em] uppercase text-white/60 mb-5 animate-reveal-delay-1">
-          New Season — 2024
+          New Season — 2026
         </p>
         <h1 className="font-serif text-[clamp(2.2rem,5.5vw,4rem)] text-white mb-3 tracking-tight leading-[1.05] animate-reveal-delay-2">
-          The Modern<br />Silhouette
+          Elegance You<br />Can Wear
         </h1>
         <p className="font-sans text-[12px] text-white/55 mb-4 leading-relaxed tracking-wide animate-reveal-delay-2 max-w-xs">
           Jastip Abaya Mesir

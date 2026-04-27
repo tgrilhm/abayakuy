@@ -12,7 +12,7 @@ export default function Footer() {
               Jastip Abaya Mesir
             </p>
             <p className="font-sans text-[10px] tracking-[0.2em] uppercase text-stone-400">
-              © 2024 ABAYAKUY.OFFICIAL. ALL RIGHTS RESERVED.
+              © 2026 ABAYAKUY.OFFICIAL. ALL RIGHTS RESERVED.
             </p>
           </div>
 
