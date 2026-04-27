@@ -1,8 +1,112 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Link } from "react-router-dom";
 import ProductCard from "../components/ProductCard";
 import { api } from "../api";
-import { Product } from "../types";
+import { Product, Media } from "../types";
+
+// ─── Hero Slider ──────────────────────────────────────────────────────────────
+const FALLBACK_IMG = "https://lh3.googleusercontent.com/aida-public/AB6AXuA3pKYuUdiTaPjYba7P1vbmlaBVJdBTtDBB_KtLhGNVIAvi8s5WwEvc0xV0MuLcZtHXiBSbmDjDpR6JCIvsIXtgeeN-5kYehXnAra4WgIU4LwGoT-bxSMDyU7zfVcRwAgwS8AWkaoN4hyTwdBDtN0Yf0PSSwekvo9LoUnXcwILSpjCPkCJ8kSacs9TuVFY0KXrB81Xby-QPjCLHBdk6KpUHc_6mc6xPIqShpBW7wUlSxuWYErYNlgXBSIPfuM6FIy_or7rGLgGj8jI";
+
+function HeroSlider({ heroProduct }: { heroProduct: Product | null }) {
+  const images: Media[] = heroProduct?.media?.filter((m) => m.type === "image") ?? [];
+  const slides = images.length > 0 ? images : [{ id: "fallback", url: FALLBACK_IMG, type: "image" as const, order: 0 }];
+
+  const [current, setCurrent] = useState(0);
+
+  // Auto-advance every 5s when there are multiple slides
+  useEffect(() => {
+    if (slides.length <= 1) return;
+    const t = setInterval(() => setCurrent((c) => (c + 1) % slides.length), 5000);
+    return () => clearInterval(t);
+  }, [slides.length]);
+
+  const prev = () => setCurrent((c) => (c - 1 + slides.length) % slides.length);
+  const next = () => setCurrent((c) => (c + 1) % slides.length);
+
+  return (
+    <div className="relative w-full h-[80vh] min-h-[520px] max-h-[860px] bg-surface-container overflow-hidden grain-overlay">
+      {/* Slides */}
+      {slides.map((slide, i) => (
+        <img
+          key={slide.id}
+          src={slide.url}
+          alt={heroProduct?.nama || "Hero"}
+          className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-700 ease-in-out ${
+            i === current ? "opacity-100" : "opacity-0"
+          }`}
+        />
+      ))}
+
+      {/* Gradients */}
+      <div className="absolute inset-0 bg-gradient-to-tr from-black/60 via-black/15 to-transparent" />
+      <div className="absolute inset-0 bg-gradient-to-t from-black/25 to-transparent" />
+
+      {/* Text overlay */}
+      <div className="absolute bottom-14 left-10 md:left-16 flex flex-col items-start z-10 max-w-lg">
+        <p className="font-sans text-[9px] tracking-[0.5em] uppercase text-white/60 mb-5 animate-reveal-delay-1">
+          New Season — 2024
+        </p>
+        <h1 className="font-serif text-[clamp(2.2rem,5.5vw,4rem)] text-white mb-3 tracking-tight leading-[1.05] animate-reveal-delay-2">
+          The Modern<br />Silhouette
+        </h1>
+        <p className="font-sans text-[12px] text-white/55 mb-4 leading-relaxed tracking-wide animate-reveal-delay-2 max-w-xs">
+          Jastip Abaya Mesir
+        </p>
+        {heroProduct && (
+          <div className="mb-6 animate-reveal-delay-2">
+            <span className="font-sans text-[9px] tracking-[0.3em] uppercase text-white/40 block mb-1">Featured</span>
+            <span className="font-serif text-[1.1rem] text-white/90 italic">
+              {heroProduct.nama || heroProduct.kode}
+            </span>
+          </div>
+        )}
+        <Link to="/collections" className="btn-primary animate-reveal-delay-3">
+          Explore Collection
+        </Link>
+      </div>
+
+      {/* Prev / Next arrows — only when multiple slides */}
+      {slides.length > 1 && (
+        <>
+          <button
+            onClick={prev}
+            aria-label="Previous"
+            className="absolute left-4 top-1/2 -translate-y-1/2 z-10 w-10 h-10 bg-black/30 hover:bg-black/60 text-white flex items-center justify-center transition-colors duration-200"
+          >
+            <span className="material-symbols-outlined text-[20px]">chevron_left</span>
+          </button>
+          <button
+            onClick={next}
+            aria-label="Next"
+            className="absolute right-4 top-1/2 -translate-y-1/2 z-10 w-10 h-10 bg-black/30 hover:bg-black/60 text-white flex items-center justify-center transition-colors duration-200"
+          >
+            <span className="material-symbols-outlined text-[20px]">chevron_right</span>
+          </button>
+
+          {/* Dot indicators */}
+          <div className="absolute bottom-5 left-1/2 -translate-x-1/2 z-10 flex gap-2">
+            {slides.map((_, i) => (
+              <button
+                key={i}
+                onClick={() => setCurrent(i)}
+                aria-label={`Slide ${i + 1}`}
+                className={`w-1.5 h-1.5 rounded-full transition-all duration-300 ${
+                  i === current ? "bg-white w-4" : "bg-white/40"
+                }`}
+              />
+            ))}
+          </div>
+        </>
+      )}
+
+      {/* Scroll indicator */}
+      <div className="absolute bottom-10 right-10 hidden md:flex flex-col items-center gap-2 animate-reveal-delay-3">
+        <div className="w-px h-10 bg-white/30 scroll-line" />
+        <span className="font-sans text-[8px] tracking-[0.35em] uppercase text-white/40 mt-1">Scroll</span>
+      </div>
+    </div>
+  );
+}
 
 function SkeletonCard({ tall = false }: { tall?: boolean }) {
   return (
@@ -67,49 +171,7 @@ export default function Home() {
     <main className="pt-28">
       {/* ─── Hero Section ─── */}
       <section className="max-w-container-max mx-auto px-gutter pt-6 pb-section-padding animate-reveal">
-        <div className="relative w-full h-[80vh] min-h-[520px] max-h-[860px] bg-surface-container overflow-hidden group grain-overlay">
-          <img
-            className="absolute inset-0 w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-[2.5s] ease-out"
-            alt="Editorial high-fashion shot of a woman in a flowing minimalist beige abaya"
-            src="https://lh3.googleusercontent.com/aida-public/AB6AXuA3pKYuUdiTaPjYba7P1vbmlaBVJdBTtDBB_KtLhGNVIAvi8s5WwEvc0xV0MuLcZtHXiBSbmDjDpR6JCIvsIXtgeeN-5kYehXnAra4WgIU4LwGoT-bxSMDyU7zfVcRwAgwS8AWkaoN4hyTwdBDtN0Yf0PSSwekvo9LoUnXcwILSpjCPkCJ8kSacs9TuVFY0KXrB81Xby-QPjCLHBdk6KpUHc_6mc6xPIqShpBW7wUlSxuWYErYNlgXBSIPfuM6FIy_or7rGLgGj8jI"
-          />
-          {/* Layered gradient — stronger at bottom-left for editorial text legibility */}
-          <div className="absolute inset-0 bg-gradient-to-tr from-black/60 via-black/15 to-transparent"></div>
-          <div className="absolute inset-0 bg-gradient-to-t from-black/25 to-transparent"></div>
-
-          {/* Left-aligned editorial text */}
-          <div className="absolute bottom-14 left-10 md:left-16 flex flex-col items-start z-10 max-w-lg">
-            <p className="font-sans text-[9px] tracking-[0.5em] uppercase text-white/60 mb-5 animate-reveal-delay-1">
-              New Season — 2024
-            </p>
-            <h1 className="font-serif text-[clamp(2.2rem,5.5vw,4rem)] text-white mb-3 tracking-tight leading-[1.05] animate-reveal-delay-2">
-              The Modern<br />Silhouette
-            </h1>
-            <p className="font-sans text-[12px] text-white/55 mb-8 leading-relaxed tracking-wide animate-reveal-delay-2 max-w-xs">
-              Jastip Abaya Mesir
-            </p>
-            {/* Hero product name badge */}
-            {heroProduct && (
-              <div className="mb-5 animate-reveal-delay-2">
-                <span className="font-sans text-[9px] tracking-[0.3em] uppercase text-white/40 block mb-1">
-                  Featured
-                </span>
-                <span className="font-serif text-[1.1rem] text-white/90 italic">
-                  {heroProduct.nama || heroProduct.kode}
-                </span>
-              </div>
-            )}
-            <Link to="/collections" className="btn-primary animate-reveal-delay-3">
-              Explore Collection
-            </Link>
-          </div>
-
-          {/* Scroll indicator */}
-          <div className="absolute bottom-10 right-10 hidden md:flex flex-col items-center gap-2 animate-reveal-delay-3">
-            <div className="w-px h-10 bg-white/30 scroll-line"></div>
-            <span className="font-sans text-[8px] tracking-[0.35em] uppercase text-white/40 mt-1">Scroll</span>
-          </div>
-        </div>
+        <HeroSlider heroProduct={heroProduct} />
       </section>
 
       {/* ─── New Arrivals ─── */}

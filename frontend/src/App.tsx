@@ -11,6 +11,7 @@ import KebijakanPengiriman from './pages/KebijakanPengiriman';
 import TanyaJawab from './pages/TanyaJawab';
 import PanduanUkuran from './pages/PanduanUkuran';
 import HubungiKami from './pages/HubungiKami';
+import ProductDetail from './pages/ProductDetail';
 import AdminLogin from './pages/AdminLogin';
 import Dashboard from './pages/Dashboard';
 
@@ -60,6 +61,7 @@ export default function App() {
             <Route path="/tanya-jawab" element={<TanyaJawab />} />
             <Route path="/panduan-ukuran" element={<PanduanUkuran />} />
             <Route path="/hubungi-kami" element={<HubungiKami />} />
+            <Route path="/product/:id" element={<ProductDetail />} />
             <Route path="/admin" element={<AdminLogin />} />
             <Route path="/admin/dashboard" element={<Dashboard />} />
           </Routes>

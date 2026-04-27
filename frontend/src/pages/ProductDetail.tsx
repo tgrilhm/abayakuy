@@ -1,134 +1,263 @@
-/**
- * @license
- * SPDX-License-Identifier: Apache-2.0
- */
+import { useState, useEffect } from "react";
+import { useParams, Link } from "react-router-dom";
+import { api } from "../api";
+import { Product, Media } from "../types";
 
-import React, { useState } from 'react';
-import { motion } from 'motion/react';
-import { Product, Media } from '../types';
-import { PlayCircle, ArrowLeft } from 'lucide-react';
-
-interface ProductDetailProps {
-  product: Product;
-  onBack: () => void;
-}
-
-export const ProductDetail: React.FC<ProductDetailProps> = ({ product, onBack }) => {
-  const [selectedMedia, setSelectedMedia] = useState<Media | null>(
-    product.media?.[0] || null
-  );
-
-  const images = product.media?.filter(m => m.type === 'image') || [];
-  const videos = product.media?.filter(m => m.type === 'video') || [];
-  const allMedia = [...images, ...videos];
-  const formatPrice = (price: number | null | undefined) => `EGP ${Number(price ?? 0).toFixed(2)}`;
-
+function SkeletonDetail() {
   return (
-    <div className="pt-[100px] pb-20 max-w-[1440px] mx-auto px-6 md:px-12">
-      <button
-        onClick={onBack}
-        className="mb-12 uppercase-label text-[10px] text-on-surface-variant hover:text-primary transition-colors flex items-center gap-2"
-      >
-        <ArrowLeft size={14} /> Back to Catalog
-      </button>
-
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-16 items-start">
-        {/* Gallery */}
-        <div className="lg:col-span-7 flex flex-col gap-4">
-          {/* Main display */}
-          <div className="aspect-[4/5] bg-surface-highest overflow-hidden">
-            {selectedMedia ? (
-              selectedMedia.type === 'video' ? (
-                <video
-                  src={selectedMedia.url}
-                  controls
-                  className="w-full h-full object-cover"
-                />
-              ) : (
-                <img src={selectedMedia.url} alt="" className="w-full h-full object-cover" />
-              )
-            ) : (
-              <div className="w-full h-full flex items-center justify-center text-on-surface-variant">
-                <span className="text-6xl">📷</span>
-              </div>
-            )}
-          </div>
-
-          {/* Thumbnails */}
-          {allMedia.length > 1 && (
-            <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 gap-3">
-              {allMedia.map((media) => (
-                <button
-                  key={media.id}
-                  onClick={() => setSelectedMedia(media)}
-                  className={`aspect-square bg-surface-highest overflow-hidden relative cursor-pointer border-2 transition-colors ${
-                    selectedMedia?.id === media.id
-                      ? 'border-primary'
-                      : 'border-transparent hover:border-surface-high'
-                  }`}
-                >
-                  {media.type === 'video' ? (
-                    <>
-                      <video src={media.url} className="w-full h-full object-cover opacity-80" />
-                      <PlayCircle size={20} className="text-white absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 drop-shadow-lg" />
-                    </>
-                  ) : (
-                    <img src={media.url} alt="" className="w-full h-full object-cover" />
-                  )}
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
-
-        {/* Info */}
-        <div className="lg:col-span-5 flex flex-col gap-8 sticky top-[120px]">
-          <div>
-            <p className="uppercase-label text-on-surface-variant mb-2">{product.brand || 'Unknown Brand'}</p>
-            <h1 className="text-5xl font-light mb-4">{product.kode || 'Untitled'}</h1>
-            <p className="text-3xl">{formatPrice(product.harga)}</p>
-          </div>
-
-          <div className="border-t border-b border-surface-high py-8 grid grid-cols-2 gap-y-6">
-            <div className="flex flex-col">
-              <span className="uppercase-label text-[10px] text-on-surface-variant mb-1">Kode</span>
-              <span className="text-sm">{product.kode || 'Untitled'}</span>
-            </div>
-            <div className="flex flex-col">
-              <span className="uppercase-label text-[10px] text-on-surface-variant mb-1">Brand</span>
-              <span className="text-sm">{product.brand || 'Unknown Brand'}</span>
-            </div>
-            <div className="flex flex-col">
-              <span className="uppercase-label text-[10px] text-on-surface-variant mb-1">Bahan</span>
-              <span className="text-sm">{product.bahan || 'Not specified'}</span>
-            </div>
-            <div className="flex flex-col">
-              <span className="uppercase-label text-[10px] text-on-surface-variant mb-1">Warna</span>
-              <span className="text-sm">{product.warna || 'Not specified'}</span>
-            </div>
-          </div>
-
-          <div className="space-y-4">
-            <span className="uppercase-label text-[10px] text-on-surface-variant">Ukuran</span>
-            <div className="flex gap-3 flex-wrap">
-              {(product.ukuran || []).map((size) => (
-                <span
-                  key={size}
-                  className="w-12 h-12 border border-primary flex items-center justify-center text-sm"
-                >
-                  {size}
-                </span>
-              ))}
-            </div>
-          </div>
-
-          {/* Media count */}
-          <div className="text-xs text-on-surface-variant">
-            {images.length} photo{images.length !== 1 ? 's' : ''}
-            {videos.length > 0 && ` · ${videos.length} video${videos.length !== 1 ? 's' : ''}`}
-          </div>
+    <div className="pt-32 min-h-screen max-w-[1280px] mx-auto px-8 py-12 animate-pulse">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-16">
+        <div className="aspect-[3/4] bg-stone-200 w-full" />
+        <div className="space-y-4 pt-4">
+          <div className="h-4 w-1/3 bg-stone-200" />
+          <div className="h-8 w-2/3 bg-stone-200" />
+          <div className="h-6 w-1/4 bg-stone-200" />
         </div>
       </div>
     </div>
   );
-};
+}
+
+export default function ProductDetail() {
+  const { id } = useParams<{ id: string }>();
+  const [product, setProduct] = useState<Product | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [notFound, setNotFound] = useState(false);
+  const [selectedMedia, setSelectedMedia] = useState<Media | null>(null);
+  const [imgLoaded, setImgLoaded] = useState(false);
+
+  useEffect(() => {
+    if (!id) return;
+    setLoading(true);
+    setImgLoaded(false);
+    api.getProductById(id)
+      .then((data) => {
+        setProduct(data);
+        const first = data?.media?.[0] ?? null;
+        setSelectedMedia(first);
+      })
+      .catch(() => setNotFound(true))
+      .finally(() => setLoading(false));
+  }, [id]);
+
+  if (loading) return <SkeletonDetail />;
+  if (notFound || !product) {
+    return (
+      <div className="pt-40 min-h-screen flex flex-col items-center justify-center gap-4 text-stone-400">
+        <span className="font-serif text-2xl text-stone-700">Produk tidak ditemukan</span>
+        <Link to="/collections" className="font-sans text-[11px] tracking-[0.2em] uppercase hover:text-black transition-colors">
+          ← Kembali ke Koleksi
+        </Link>
+      </div>
+    );
+  }
+
+  const allMedia = product.media ?? [];
+  const images = allMedia.filter((m) => m.type === "image");
+  const videos = allMedia.filter((m) => m.type === "video");
+
+  const formatPrice = (p: number | null) =>
+    p != null ? `EGP ${p.toLocaleString("en-EG", { minimumFractionDigits: 2 })}` : "—";
+
+  return (
+    <main className="pt-28 min-h-screen bg-[#faf8f6]">
+      <div className="max-w-[1280px] mx-auto px-6 md:px-8 py-10">
+
+        {/* Breadcrumb */}
+        <nav className="flex items-center gap-2 mb-10 font-sans text-[10px] tracking-[0.15em] uppercase text-stone-400">
+          <Link to="/" className="hover:text-black transition-colors">Home</Link>
+          <span>/</span>
+          <Link to="/collections" className="hover:text-black transition-colors">Collections</Link>
+          <span>/</span>
+          <span className="text-stone-600">{product.nama || product.kode || "Product"}</span>
+        </nav>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 xl:gap-20 items-start">
+
+          {/* ─── Gallery ─── */}
+          <div className="flex flex-col gap-3">
+            {/* Main image */}
+            <div className="relative w-full aspect-[3/4] bg-stone-100 overflow-hidden">
+              {!imgLoaded && <div className="absolute inset-0 skeleton" />}
+              {selectedMedia ? (
+                selectedMedia.type === "video" ? (
+                  <video
+                    key={selectedMedia.url}
+                    src={selectedMedia.url}
+                    controls
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <img
+                    key={selectedMedia.url}
+                    src={selectedMedia.url}
+                    alt={product.nama || product.kode || ""}
+                    onLoad={() => setImgLoaded(true)}
+                    className={`w-full h-full object-cover transition-opacity duration-500 ${imgLoaded ? "opacity-100" : "opacity-0"}`}
+                  />
+                )
+              ) : (
+                <div className="w-full h-full flex items-center justify-center text-stone-300 text-4xl">📷</div>
+              )}
+            </div>
+
+            {/* Thumbnails — only show when more than 1 */}
+            {allMedia.length > 1 && (
+              <div className="grid grid-cols-5 gap-2">
+                {allMedia.map((media) => (
+                  <button
+                    key={media.id}
+                    onClick={() => { setSelectedMedia(media); setImgLoaded(false); }}
+                    className={`relative aspect-square bg-stone-100 overflow-hidden border-2 transition-all duration-200 ${
+                      selectedMedia?.id === media.id
+                        ? "border-stone-900"
+                        : "border-transparent hover:border-stone-400"
+                    }`}
+                  >
+                    {media.type === "video" ? (
+                      <>
+                        <video src={media.url} className="w-full h-full object-cover opacity-80" />
+                        <div className="absolute inset-0 flex items-center justify-center">
+                          <span className="material-symbols-outlined text-white text-[18px] drop-shadow">play_circle</span>
+                        </div>
+                      </>
+                    ) : (
+                      <img src={media.url} alt="" className="w-full h-full object-cover" />
+                    )}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* ─── Product Info ─── */}
+          <div className="lg:sticky lg:top-32 flex flex-col gap-6">
+
+            {/* Header */}
+            <div>
+              {product.brand && (
+                <p className="font-sans text-[10px] tracking-[0.3em] uppercase text-stone-400 mb-2">
+                  {product.brand}
+                </p>
+              )}
+              <h1 className="font-serif text-[clamp(1.6rem,3vw,2.4rem)] text-stone-900 leading-tight mb-3">
+                {product.nama || product.kode || "Untitled"}
+              </h1>
+              <p className="font-serif text-[1.5rem] text-stone-800">
+                {formatPrice(product.harga)}
+              </p>
+            </div>
+
+            {/* Badges */}
+            <div className="flex flex-wrap gap-2">
+              {product.isSale && (
+                <span className="font-sans text-[9px] tracking-[0.2em] uppercase bg-rose-100 text-rose-700 border border-rose-200 px-2.5 py-1">
+                  Sale
+                </span>
+              )}
+              {product.isTrending && (
+                <span className="font-sans text-[9px] tracking-[0.2em] uppercase bg-amber-100 text-amber-700 border border-amber-200 px-2.5 py-1">
+                  Trending
+                </span>
+              )}
+              {product.kategori && (
+                <span className="font-sans text-[9px] tracking-[0.2em] uppercase bg-stone-100 text-stone-600 border border-stone-200 px-2.5 py-1">
+                  {product.kategori}
+                </span>
+              )}
+            </div>
+
+            <div className="border-t border-stone-200" />
+
+            {/* Details grid */}
+            <div className="grid grid-cols-2 gap-x-6 gap-y-5">
+              {product.kode && (
+                <div>
+                  <p className="font-sans text-[9px] tracking-[0.2em] uppercase text-stone-400 mb-1">Kode</p>
+                  <p className="font-sans text-[13px] text-stone-700">{product.kode}</p>
+                </div>
+              )}
+              {product.bahan && (
+                <div>
+                  <p className="font-sans text-[9px] tracking-[0.2em] uppercase text-stone-400 mb-1">Bahan</p>
+                  <p className="font-sans text-[13px] text-stone-700">{product.bahan}</p>
+                </div>
+              )}
+            </div>
+
+            {/* Warna */}
+            {product.warna && product.warna.length > 0 && (
+              <div>
+                <p className="font-sans text-[9px] tracking-[0.2em] uppercase text-stone-400 mb-2">Warna</p>
+                <div className="flex flex-wrap gap-2">
+                  {product.warna.map((w) => (
+                    <span key={w} className="font-sans text-[11px] bg-stone-100 text-stone-700 border border-stone-200 px-3 py-1">
+                      {w}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Ukuran */}
+            {product.ukuran && product.ukuran.length > 0 && (
+              <div>
+                <p className="font-sans text-[9px] tracking-[0.2em] uppercase text-stone-400 mb-2">Ukuran</p>
+                <div className="flex flex-wrap gap-2">
+                  {product.ukuran.map((s) => (
+                    <span
+                      key={s}
+                      className="font-sans text-[11px] tracking-[0.1em] uppercase border border-stone-300 text-stone-700 px-3 py-1.5 min-w-[44px] text-center"
+                    >
+                      {s}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Deskripsi */}
+            {product.deskripsi && (
+              <div>
+                <p className="font-sans text-[9px] tracking-[0.2em] uppercase text-stone-400 mb-2">Deskripsi</p>
+                <p className="font-sans text-[13px] text-stone-600 leading-[1.8]">{product.deskripsi}</p>
+              </div>
+            )}
+
+            <div className="border-t border-stone-200" />
+
+            {/* CTA */}
+            <div className="flex flex-col gap-3">
+              <a
+                href="https://wa.me/201222569881"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center justify-center gap-3 bg-[#25D366] text-white font-sans text-[12px] tracking-[0.2em] uppercase py-4 hover:bg-[#1ebe5d] transition-colors duration-300"
+              >
+                <svg viewBox="0 0 24 24" fill="white" className="w-4 h-4">
+                  <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
+                </svg>
+                Pesan via WhatsApp
+              </a>
+              <a
+                href="https://shopee.co.id/abyky.of"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center justify-center gap-3 bg-[#EE4D2D] text-white font-sans text-[12px] tracking-[0.2em] uppercase py-4 hover:bg-[#d94429] transition-colors duration-300"
+              >
+                Beli di Shopee
+              </a>
+            </div>
+
+            {/* Media count */}
+            {allMedia.length > 0 && (
+              <p className="font-sans text-[10px] text-stone-400">
+                {images.length} foto{videos.length > 0 ? ` · ${videos.length} video` : ""}
+              </p>
+            )}
+          </div>
+        </div>
+      </div>
+    </main>
+  );
+}
