@@ -5,7 +5,7 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { Search, Plus, Edit, Trash2, X, Upload, Loader2, PlayCircle, Package, Layout } from 'lucide-react';
-import { Product, KATEGORI_OPTIONS, UKURAN_OPTIONS, BAHAN_OPTIONS, WARNA_OPTIONS, Ukuran, Kategori, Bahan, Warna } from '../types';
+import { Product, KATEGORI_OPTIONS, UKURAN_OPTIONS, BAHAN_OPTIONS, WARNA_OPTIONS, Ukuran, Kategori, Bahan, Warna, formatUkuranDisplay } from '../types';
 import { api } from '../api';
 import { motion, AnimatePresence } from 'motion/react';
 
@@ -383,7 +383,7 @@ export const AdminProductList: React.FC<AdminProductListProps> = ({ products, lo
                         <div className="flex gap-1 flex-wrap">
                           {(product.ukuran || []).map((size) => (
                             <span key={size} className="font-sans text-[9px] tracking-widest uppercase bg-stone-900 text-white px-1.5 py-0.5">
-                              {size}
+                              {formatUkuranDisplay(size)}
                             </span>
                           ))}
                         </div>

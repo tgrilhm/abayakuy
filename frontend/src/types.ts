@@ -54,6 +54,19 @@ export const UKURAN_OPTIONS: Ukuran[] = [
   'L', 'XL', '2XL', '3XL', '4XL', 'Free Size',
 ];
 
+const UKURAN_DISPLAY_MAP: Record<string, Ukuran> = {
+  L: 'L',
+  XL: 'XL',
+  XXL: '2XL',
+  XXXL: '3XL',
+  XXXXL: '4XL',
+  Free_Size: 'Free Size',
+};
+
+export function formatUkuranDisplay(size: string): Ukuran | string {
+  return UKURAN_DISPLAY_MAP[size] ?? size;
+}
+
 export const BAHAN_OPTIONS: Bahan[] = [
   'Premium Harrer',
   'Tiktok',

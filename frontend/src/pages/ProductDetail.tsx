@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import { api } from "../api";
-import { Product, Media } from "../types";
+import { Product, Media, formatUkuranDisplay } from "../types";
 
 function SkeletonDetail() {
   return (
@@ -146,6 +146,14 @@ export default function ProductDetail() {
               <p className="font-serif text-[1.5rem] text-stone-800">
                 {formatPrice(product.harga)}
               </p>
+              <div className="mt-3 space-y-1">
+                <p className="font-sans text-[12px] text-stone-500 leading-[1.7]">
+                  Harga berlaku untuk order manual (belum termasuk ongkir).
+                </p>
+                <p className="font-sans text-[12px] text-stone-500 leading-[1.7]">
+                  Harga di Shopee dapat berbeda sesuai ketentuan admin yang berlaku di shoope.
+                </p>
+              </div>
             </div>
 
             {/* Badges */}
@@ -209,7 +217,7 @@ export default function ProductDetail() {
                       key={s}
                       className="font-sans text-[11px] tracking-[0.1em] uppercase border border-stone-300 text-stone-700 px-3 py-1.5 min-w-[44px] text-center"
                     >
-                      {s}
+                      {formatUkuranDisplay(s)}
                     </span>
                   ))}
                 </div>
