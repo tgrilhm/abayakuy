@@ -21,7 +21,7 @@ interface ProductFormData {
   brand: string;
   bahan: Bahan | '';
   ukuran: Ukuran[];
-  warna: Warna | '';
+  warna: Warna[];
   harga: string;
   kategori: Kategori | '';
   deskripsi: string;
@@ -33,7 +33,7 @@ const emptyForm: ProductFormData = {
   brand: '',
   bahan: '',
   ukuran: [],
-  warna: '',
+  warna: [],
   harga: '',
   kategori: '',
   deskripsi: '',
@@ -105,6 +105,7 @@ export const AdminProductList: React.FC<AdminProductListProps> = ({ products, lo
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
+  const [openPageMenuId, setOpenPageMenuId] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Lock body scroll when drawer is open
@@ -147,7 +148,7 @@ export const AdminProductList: React.FC<AdminProductListProps> = ({ products, lo
       brand: product.brand || '',
       bahan: (product.bahan as Bahan) || '',
       ukuran: (product.ukuran || []) as Ukuran[],
-      warna: (product.warna as Warna) || '',
+      warna: Array.isArray(product.warna) ? product.warna as Warna[] : (product.warna ? [product.warna as Warna] : []),
       harga: String(product.harga ?? ''),
       kategori: (product.kategori as Kategori) || '',
       deskripsi: product.deskripsi || '',
@@ -206,7 +207,7 @@ export const AdminProductList: React.FC<AdminProductListProps> = ({ products, lo
       fd.append('brand', formData.brand);
       fd.append('bahan', formData.bahan);
       fd.append('ukuran', JSON.stringify(formData.ukuran));
-      fd.append('warna', formData.warna);
+      fd.append('warna', JSON.stringify(formData.warna));
       fd.append('harga', formData.harga);
       if (formData.kategori) fd.append('kategori', formData.kategori);
       if (formData.deskripsi) fd.append('deskripsi', formData.deskripsi);
@@ -367,7 +368,16 @@ export const AdminProductList: React.FC<AdminProductListProps> = ({ products, lo
                         ) : <span className="text-stone-300 text-[12px]">—</span>}
                       </td>
                       <td className="px-4 py-3 font-sans text-[12px] text-stone-600">{product.bahan || '—'}</td>
-                      <td className="px-4 py-3 font-sans text-[12px] text-stone-600">{product.warna || '—'}</td>
+                      <td className="px-4 py-3">
+                        <div className="flex gap-1 flex-wrap">
+                          {(product.warna || []).map((w) => (
+                            <span key={w} className="font-sans text-[9px] bg-stone-100 text-stone-600 px-1.5 py-0.5 border border-stone-200">
+                              {w}
+                            </span>
+                          ))}
+                          {(!product.warna || product.warna.length === 0) && <span className="text-stone-300 text-[12px]">—</span>}
+                        </div>
+                      </td>
                       <td className="px-4 py-3">
                         <div className="flex gap-1 flex-wrap">
                           {(product.ukuran || []).map((size) => (
@@ -408,27 +418,41 @@ export const AdminProductList: React.FC<AdminProductListProps> = ({ products, lo
                           </div>
 
                           {/* ── Assign to page button + popover ── */}
-                          <div className="relative group/pages">
+                          <div className="relative">
                             <button
-                              className="w-8 h-8 flex items-center justify-center rounded border border-stone-200 bg-white text-stone-500 hover:border-stone-900 hover:text-stone-900 hover:bg-stone-50 transition-all duration-150"
+                              onClick={() => setOpenPageMenuId(openPageMenuId === product.id ? null : product.id)}
+                              className={`w-8 h-8 flex items-center justify-center rounded border transition-all duration-150 ${
+                                openPageMenuId === product.id
+                                  ? 'border-stone-900 bg-stone-900 text-white'
+                                  : 'border-stone-200 bg-white text-stone-500 hover:border-stone-900 hover:text-stone-900 hover:bg-stone-50'
+                              }`}
                               title="Assign to page"
                             >
                               <Layout size={13} />
                             </button>
-                            {/* Popover */}
-                            <div className="absolute right-0 top-full mt-1.5 z-20 bg-white border border-stone-200 shadow-lg w-52 hidden group-hover/pages:block">
-                              <div className="px-3 py-2 border-b border-stone-100">
-                                <p className="font-sans text-[9px] tracking-[0.2em] uppercase text-stone-400">Assign to page</p>
-                              </div>
-                              <div className="py-1">
-                                <ToggleRow label="Trending Now" active={product.isTrending} color="amber" onClick={() => handleTogglePage(product, 'isTrending')} />
-                                <ToggleRow label="Sale" active={product.isSale} color="rose" onClick={() => handleTogglePage(product, 'isSale')} />
-                              </div>
-                              <div className="border-t border-stone-100 py-1">
-                                <ToggleRow label="Home Hero" sub="Nama tampil di hero" active={product.isHeroFeatured} color="violet" onClick={() => handleTogglePage(product, 'isHeroFeatured')} />
-                                <ToggleRow label="Visible" sub="Tampil di katalog" active={product.isVisible} color="emerald" onClick={() => handleTogglePage(product, 'isVisible')} />
-                              </div>
-                            </div>
+                            {/* Click-based popover */}
+                            {openPageMenuId === product.id && (
+                              <>
+                                {/* Backdrop to close */}
+                                <div className="fixed inset-0 z-10" onClick={() => setOpenPageMenuId(null)} />
+                                <div className="absolute right-0 top-full mt-1.5 z-20 bg-white border border-stone-200 shadow-xl w-52">
+                                  <div className="px-3 py-2 border-b border-stone-100 flex items-center justify-between">
+                                    <p className="font-sans text-[9px] tracking-[0.2em] uppercase text-stone-400">Assign to page</p>
+                                    <button onClick={() => setOpenPageMenuId(null)} className="text-stone-300 hover:text-stone-600">
+                                      <X size={12} />
+                                    </button>
+                                  </div>
+                                  <div className="py-1">
+                                    <ToggleRow label="Trending Now" active={product.isTrending} color="amber" onClick={() => handleTogglePage(product, 'isTrending')} />
+                                    <ToggleRow label="Sale" active={product.isSale} color="rose" onClick={() => handleTogglePage(product, 'isSale')} />
+                                  </div>
+                                  <div className="border-t border-stone-100 py-1">
+                                    <ToggleRow label="Home Hero" sub="Nama tampil di hero" active={product.isHeroFeatured} color="violet" onClick={() => handleTogglePage(product, 'isHeroFeatured')} />
+                                    <ToggleRow label="Visible" sub="Tampil di katalog" active={product.isVisible} color="emerald" onClick={() => handleTogglePage(product, 'isVisible')} />
+                                  </div>
+                                </div>
+                              </>
+                            )}
                           </div>
 
                           <button
@@ -538,20 +562,44 @@ export const AdminProductList: React.FC<AdminProductListProps> = ({ products, lo
 
                   {/* Row: Warna + Harga */}
                   <div className="grid grid-cols-2 gap-4">
-                    <Field label="Warna" required>
-                      <select
-                        required
-                        value={formData.warna}
-                        onChange={(e) => setFormData((prev) => ({ ...prev, warna: e.target.value as Warna | '' }))}
-                        className={inputCls}
-                      >
-                        <option value="">— Pilih warna —</option>
-                        {WARNA_OPTIONS.map((w) => (
-                          <option key={w} value={w}>{w}</option>
-                        ))}
-                      </select>
+                    <Field label="Harga (EGP)" required>
+                      <input type="number" step="0.01" required placeholder="0.00" value={formData.harga} onChange={set('harga')} className={inputCls} />
                     </Field>
                   </div>
+
+                  {/* Warna — checkbox grid */}
+                  <Field label="Warna" required>
+                    <div className="grid grid-cols-3 gap-2 pt-1">
+                      {WARNA_OPTIONS.map((color) => {
+                        const checked = formData.warna.includes(color);
+                        return (
+                          <label
+                            key={color}
+                            className={`flex items-center justify-center py-2 cursor-pointer border transition-all duration-150 font-sans text-[11px] select-none ${
+                              checked
+                                ? 'bg-stone-900 text-white border-stone-900'
+                                : 'bg-stone-50 text-stone-500 border-stone-200 hover:border-stone-500 hover:text-stone-800'
+                            }`}
+                          >
+                            <input
+                              type="checkbox"
+                              className="sr-only"
+                              checked={checked}
+                              onChange={() =>
+                                setFormData((prev) => ({
+                                  ...prev,
+                                  warna: checked
+                                    ? prev.warna.filter((w) => w !== color)
+                                    : [...prev.warna, color],
+                                }))
+                              }
+                            />
+                            {color}
+                          </label>
+                        );
+                      })}
+                    </div>
+                  </Field>
 
                   {/* Row: Kategori + Stok */}
                   <div className="grid grid-cols-2 gap-4">

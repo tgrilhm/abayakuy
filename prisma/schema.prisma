@@ -62,7 +62,7 @@ model Product {
   brand            String?
   bahan            Bahan?     // Material / Fabric (enum)
   ukuran           Ukuran[]   // Sizes enum array
-  warna            Warna?     // Color (enum)
+  warna            Warna[]    // Colors (enum array)
   harga            Float?     // Price
   kategori         Kategori?  // Category enum
   deskripsi        String?    // Long description

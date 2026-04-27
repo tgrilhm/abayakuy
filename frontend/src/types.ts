@@ -91,7 +91,7 @@ export interface Product {
   brand: string | null;
   bahan: Bahan | null;
   ukuran: Ukuran[] | null;
-  warna: Warna | null;
+  warna: Warna[] | null;
   harga: number | null;
   kategori: Kategori | null;
   deskripsi: string | null;

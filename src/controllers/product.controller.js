@@ -71,6 +71,18 @@ function toWarnaEnum(value) {
   return WARNA_MAP[value] || null;
 }
 
+function parseWarnaInput(raw) {
+  if (!raw) return [];
+  let arr;
+  try {
+    arr = JSON.parse(raw);
+  } catch {
+    arr = raw.split(',').map((s) => s.trim()).filter(Boolean);
+  }
+  if (!Array.isArray(arr)) return [];
+  return arr.map((v) => WARNA_MAP[v]).filter(Boolean);
+}
+
 function toUkuranEnum(values) {
   if (!Array.isArray(values)) return [];
   return values.map((v) => UKURAN_MAP[v]).filter(Boolean);
@@ -108,7 +120,7 @@ export const createProduct = async (req, res, next) => {
         brand,
         bahan: toBahanEnum(bahan),
         ukuran: parsedUkuran,
-        warna: toWarnaEnum(warna),
+        warna: parseWarnaInput(warna),
         harga: parseFloat(harga),
         kategori: toKategoriEnum(kategori),
         deskripsi: deskripsi || null,
@@ -233,7 +245,7 @@ export const updateProduct = async (req, res, next) => {
         brand:     brand     !== undefined ? brand                   : existingProduct.brand,
         bahan:     bahan     !== undefined ? toBahanEnum(bahan)       : existingProduct.bahan,
         ukuran:    ukuran    !== undefined ? parseUkuranInput(ukuran): existingProduct.ukuran,
-        warna:     warna     !== undefined ? toWarnaEnum(warna)       : existingProduct.warna,
+        warna:     warna     !== undefined ? parseWarnaInput(warna)  : existingProduct.warna,
         harga:     harga     !== undefined ? parseFloat(harga)       : existingProduct.harga,
         kategori:  kategori  !== undefined ? toKategoriEnum(kategori): existingProduct.kategori,
         deskripsi: deskripsi !== undefined ? deskripsi || null       : existingProduct.deskripsi,
