@@ -88,7 +88,7 @@ export default function ProductCard({
             isSmall ? "text-[12px]" : "text-[13px]"
           } font-sans text-stone-400 tracking-wide`}
         >
-          {price}
+          {isNaN(Number(price)) ? price : `Rp ${Number(price).toLocaleString('id-ID')}`}
         </p>
       </div>
     </Link>

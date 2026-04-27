@@ -121,8 +121,9 @@ export const AdminProductList: React.FC<AdminProductListProps> = ({ products, lo
       (p.nama || '').toLowerCase().includes(q) ||
       (p.brand || '').toLowerCase().includes(q) ||
       (p.bahan || '').toLowerCase().includes(q) ||
-      (p.warna || '').toLowerCase().includes(q) ||
-      (p.kategori || '').toLowerCase().includes(q)
+      (Array.isArray(p.warna) ? p.warna.join(' ') : (p.warna || '')).toLowerCase().includes(q) ||
+      (p.kategori || '').toLowerCase().includes(q) ||
+      (p.deskripsi || '').toLowerCase().includes(q)
     );
   });
 
@@ -388,7 +389,7 @@ export const AdminProductList: React.FC<AdminProductListProps> = ({ products, lo
                         </div>
                       </td>
                       <td className="px-4 py-3 font-sans text-[13px] font-medium text-stone-800">
-                        EGP {Number(product.harga ?? 0).toFixed(2)}
+                        Rp {Number(product.harga ?? 0).toLocaleString('id-ID')}
                       </td>
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-1 justify-end">
@@ -435,7 +436,7 @@ export const AdminProductList: React.FC<AdminProductListProps> = ({ products, lo
                               <>
                                 {/* Backdrop to close */}
                                 <div className="fixed inset-0 z-10" onClick={() => setOpenPageMenuId(null)} />
-                                <div className="absolute right-0 top-full mt-1.5 z-20 bg-white border border-stone-200 shadow-xl w-52">
+                                <div className="absolute right-0 top-full mt-1.5 z-[500] bg-white border border-stone-200 shadow-xl w-52">
                                   <div className="px-3 py-2 border-b border-stone-100 flex items-center justify-between">
                                     <p className="font-sans text-[9px] tracking-[0.2em] uppercase text-stone-400">Assign to page</p>
                                     <button onClick={() => setOpenPageMenuId(null)} className="text-stone-300 hover:text-stone-600">
@@ -560,12 +561,7 @@ export const AdminProductList: React.FC<AdminProductListProps> = ({ products, lo
                     </Field>
                   </div>
 
-                  {/* Row: Warna + Harga */}
-                  <div className="grid grid-cols-2 gap-4">
-                    <Field label="Harga (EGP)" required>
-                      <input type="number" step="0.01" required placeholder="0.00" value={formData.harga} onChange={set('harga')} className={inputCls} />
-                    </Field>
-                  </div>
+                  {/* Row: Warna + Harga — removed duplicate, Harga is in Kategori row below */}
 
                   {/* Warna — checkbox grid */}
                   <Field label="Warna" required>
@@ -615,7 +611,7 @@ export const AdminProductList: React.FC<AdminProductListProps> = ({ products, lo
                         ))}
                       </select>
                     </Field>
-                    <Field label="Harga (EGP)" required>
+                    <Field label="Harga (Rp)" required>
                       <input type="number" step="0.01" required placeholder="0.00" value={formData.harga} onChange={set('harga')} className={inputCls} />
                     </Field>
                   </div>

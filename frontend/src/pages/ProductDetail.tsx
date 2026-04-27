@@ -57,7 +57,7 @@ export default function ProductDetail() {
   const videos = allMedia.filter((m) => m.type === "video");
 
   const formatPrice = (p: number | null) =>
-    p != null ? `EGP ${p.toLocaleString("en-EG", { minimumFractionDigits: 2 })}` : "—";
+    p != null ? `Rp ${p.toLocaleString('id-ID')}` : "—";
 
   return (
     <main className="pt-28 min-h-screen bg-[#faf8f6]">
