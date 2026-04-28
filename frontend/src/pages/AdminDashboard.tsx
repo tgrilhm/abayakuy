@@ -243,7 +243,7 @@ export const AdminProductList: React.FC<AdminProductListProps> = ({ products, lo
     }
   };
 
-  const handleTogglePage = async (product: Product, flag: 'isTrending' | 'isSale' | 'isHeroFeatured' | 'isVisible') => {
+  const handleTogglePage = async (product: Product, flag: 'isTrending' | 'isSale' | 'isHeroFeatured' | 'isVisible' | 'isAvailable') => {
     try {
       const newValue = !product[flag];
       await api.updateProductPages(product.id, { [flag]: newValue });
@@ -252,8 +252,12 @@ export const AdminProductList: React.FC<AdminProductListProps> = ({ products, lo
         isSale: 'Sale',
         isHeroFeatured: 'Home Hero',
         isVisible: 'Visibility',
+        isAvailable: 'Availability',
       };
       showToast(newValue ? `Added to ${labels[flag]}` : `Removed from ${labels[flag]}`);
+      if (flag === 'isAvailable') {
+        showToast(newValue ? 'Product marked as Available' : 'Product marked as Sold Out');
+      }
       onRefresh();
     } catch (err: any) {
       showToast(err.message || 'Failed to update', 'error');
@@ -411,6 +415,11 @@ export const AdminProductList: React.FC<AdminProductListProps> = ({ products, lo
                                 Sale
                               </span>
                             )}
+                            {!product.isAvailable && (
+                              <span className="font-sans text-[8px] tracking-[0.1em] uppercase bg-red-100 text-red-700 px-1.5 py-0.5 border border-red-200">
+                                Sold Out
+                              </span>
+                            )}
                             {!product.isVisible && (
                               <span className="font-sans text-[8px] tracking-[0.1em] uppercase bg-stone-100 text-stone-500 px-1.5 py-0.5 border border-stone-300">
                                 Hidden
@@ -450,6 +459,7 @@ export const AdminProductList: React.FC<AdminProductListProps> = ({ products, lo
                                   <div className="border-t border-stone-100 py-1">
                                     <ToggleRow label="Home Hero" sub="Nama tampil di hero" active={product.isHeroFeatured} color="violet" onClick={() => handleTogglePage(product, 'isHeroFeatured')} />
                                     <ToggleRow label="Visible" sub="Tampil di katalog" active={product.isVisible} color="emerald" onClick={() => handleTogglePage(product, 'isVisible')} />
+                                    <ToggleRow label="In Stock" sub="Tersedia untuk dipesan" active={product.isAvailable} color="emerald" onClick={() => handleTogglePage(product, 'isAvailable')} />
                                   </div>
                                 </div>
                               </>

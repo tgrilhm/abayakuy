@@ -85,8 +85,9 @@ export default function Trending() {
             sorted.length > 0 ? sorted.map((product) => (
               <ProductCard key={product.id} id={product.id}
                 title={product.nama || product.kode || "Untitled"}
-                price={`${product.harga ?? 0}`} aspectRatio="2/3" isSmall
-                imageSrc={product.media && product.media.length > 0 ? product.media[0].url : "https://via.placeholder.com/300x450"}
+                price={`${product.harga ?? 0}`}
+                isAvailable={product.isAvailable}
+                imageSrc={product.media && product.media.length > 0 ? product.media[0].url : "https://via.placeholder.com/400x500"}
               />
             )) : (
               <div className="col-span-4 text-center py-24 text-stone-400 font-sans text-sm">No trending products yet.</div>

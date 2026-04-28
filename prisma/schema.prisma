@@ -70,6 +70,7 @@ model Product {
   isSale           Boolean    @default(false) // Show on Sale page
   isHeroFeatured   Boolean    @default(false) // Show name on Home hero image
   isVisible        Boolean    @default(true)  // Show in catalog / storefront
+  isAvailable      Boolean    @default(true)  // Availability status (Sold Out if false)
   created_at       DateTime   @default(now())
   updated_at       DateTime   @updatedAt
 

@@ -306,7 +306,7 @@ export const deleteProduct = async (req, res, next) => {
 export const updateProductPages = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const { isTrending, isSale, isHeroFeatured, isVisible } = req.body;
+    const { isTrending, isSale, isHeroFeatured, isVisible, isAvailable } = req.body;
 
     const existing = await prisma.product.findUnique({ where: { id } });
     if (!existing) return res.status(404).json({ error: 'Product not found' });
@@ -326,6 +326,7 @@ export const updateProductPages = async (req, res, next) => {
         isSale:         isSale         !== undefined ? Boolean(isSale)         : existing.isSale,
         isHeroFeatured: isHeroFeatured !== undefined ? Boolean(isHeroFeatured) : existing.isHeroFeatured,
         isVisible:      isVisible      !== undefined ? Boolean(isVisible)      : existing.isVisible,
+        isAvailable:    isAvailable    !== undefined ? Boolean(isAvailable)    : existing.isAvailable,
       },
       include: { media: { orderBy: { order: 'asc' } } },
     });

@@ -112,6 +112,7 @@ export interface Product {
   isSale: boolean;
   isHeroFeatured: boolean;
   isVisible: boolean;
+  isAvailable: boolean;
   created_at: string;
   updated_at: string;
   media: Media[] | null;

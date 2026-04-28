@@ -165,6 +165,7 @@ export default function Collections() {
                 price={`${product.harga ?? 0}`}
                 aspectRatio="2/3"
                 isSmall={true}
+                isAvailable={product.isAvailable}
                 imageSrc={
                   product.media && product.media.length > 0
                     ? product.media[0].url

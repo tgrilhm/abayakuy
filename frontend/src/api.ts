@@ -114,7 +114,7 @@ export const api = {
     return parseResponse(res);
   },
 
-  updateProductPages: async (id: string, flags: { isTrending?: boolean; isSale?: boolean; isHeroFeatured?: boolean; isVisible?: boolean }) => {
+  updateProductPages: async (id: string, flags: { isTrending?: boolean; isSale?: boolean; isHeroFeatured?: boolean; isVisible?: boolean; isAvailable?: boolean }) => {
     const res = await fetch(`${API_URL}/products/${id}/pages`, {
       method: 'PATCH',
       headers: { ...getAuthHeaders(), 'Content-Type': 'application/json' },

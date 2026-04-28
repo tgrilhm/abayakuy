@@ -10,6 +10,7 @@ export interface ProductCardProps {
   imageAlt?: string;
   aspectRatio?: "3/4" | "2/3";
   isSmall?: boolean;
+  isAvailable?: boolean;
 }
 
 export default function ProductCard({
@@ -20,6 +21,7 @@ export default function ProductCard({
   imageAlt,
   aspectRatio = "3/4",
   isSmall = false,
+  isAvailable = true,
 }: ProductCardProps) {
   const [loaded, setLoaded] = useState(false);
   const [wishlisted, setWishlisted] = useState(false);
@@ -37,11 +39,20 @@ export default function ProductCard({
         <img
           className={`w-full h-full object-cover transition-all duration-700 ease-out group-hover:scale-[1.04] ${
             loaded ? "opacity-100" : "opacity-0"
-          }`}
+          } ${!isAvailable ? "grayscale-[0.5] opacity-60" : ""}`}
           alt={imageAlt || title}
           src={imageSrc}
           onLoad={() => setLoaded(true)}
         />
+
+        {/* Sold Out Badge */}
+        {!isAvailable && (
+          <div className="absolute inset-0 flex items-center justify-center z-10">
+            <span className="bg-black/60 backdrop-blur-sm text-white font-sans text-[10px] tracking-[0.3em] uppercase px-4 py-2 border border-white/20">
+              Sold Out
+            </span>
+          </div>
+        )}
 
         {/* Hover overlay */}
         <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors duration-500" />

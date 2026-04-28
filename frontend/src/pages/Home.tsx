@@ -194,6 +194,7 @@ export default function Home() {
               <ProductCard key={product.id} id={product.id || "1"}
                 title={product.nama || product.kode || "Untitled"}
                 price={`${product.harga ?? 0}`}
+                isAvailable={product.isAvailable}
                 imageSrc={product.media && product.media.length > 0 ? product.media[0].url : "https://via.placeholder.com/400x500"}
               />
             ))
@@ -237,6 +238,7 @@ export default function Home() {
                 title={product.nama || product.kode || "Untitled"}
                 price={`${product.harga ?? 0}`}
                 aspectRatio="2/3" isSmall
+                isAvailable={product.isAvailable}
                 imageSrc={product.media && product.media.length > 0 ? product.media[0].url : "https://via.placeholder.com/300x450"}
               />
             ))
