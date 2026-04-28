@@ -1,74 +1,53 @@
-import { supabase } from '../config/supabase.js';
+import fs from 'fs';
+import path from 'path';
 
 /**
- * Upload a single file to Supabase Storage.
+ * Process a single uploaded file.
  * @param {object} file - Multer file object
- * @returns {{ url: string, type: string }} - Public URL and file type
+ * @returns {{ url: string, type: string }} - Local URL and file type
  */
 export const uploadFile = async (file) => {
-  if (!supabase) {
-    throw new Error('Supabase is not configured.');
-  }
-
-  const fileExt = file.originalname.split('.').pop();
-  const fileName = `${Date.now()}-${Math.random().toString(36).substring(2, 15)}.${fileExt}`;
-  const filePath = `${fileName}`;
-
-  const { data, error } = await supabase.storage
-    .from('products')
-    .upload(filePath, file.buffer, {
-      contentType: file.mimetype,
-      upsert: false,
-    });
-
-  if (error) {
-    throw new Error(`Failed to upload file: ${error.message}`);
-  }
-
-  const { data: publicUrlData } = supabase.storage
-    .from('products')
-    .getPublicUrl(filePath);
-
   // Determine type based on mimetype
   const type = file.mimetype.startsWith('video/') ? 'video' : 'image';
+  
+  // Create the URL path (relative to the server)
+  // Example: /uploads/media-123.jpg
+  const relativeUrl = `/uploads/${file.filename}`;
 
   return {
-    url: publicUrlData.publicUrl,
+    url: relativeUrl,
     type,
   };
 };
 
 /**
- * Upload multiple files to Supabase Storage.
+ * Process multiple uploaded files.
  * @param {object[]} files - Array of Multer file objects
- * @returns {Array<{ url: string, type: string }>} - Array of public URLs and types
+ * @returns {Array<{ url: string, type: string }>} - Array of local URLs and types
  */
 export const uploadFiles = async (files) => {
   if (!files || files.length === 0) return [];
-
-  const results = await Promise.all(files.map((file) => uploadFile(file)));
-  return results;
+  return files.map((file) => ({
+    url: `/uploads/${file.filename}`,
+    type: file.mimetype.startsWith('video/') ? 'video' : 'image',
+  }));
 };
 
 /**
- * Delete a file from Supabase Storage by its public URL.
- * @param {string} publicUrl - The public URL of the file to delete
+ * Delete a file from the local filesystem.
+ * @param {string} localUrl - The relative URL of the file to delete
  */
-export const deleteFile = async (publicUrl) => {
-  if (!supabase) {
-    throw new Error('Supabase is not configured.');
-  }
-
+export const deleteFile = async (localUrl) => {
   try {
-    // Extract the file path from the public URL
-    // URL format: https://<project>.supabase.co/storage/v1/object/public/products/<filename>
-    const url = new URL(publicUrl);
-    const pathParts = url.pathname.split('/storage/v1/object/public/products/');
-    if (pathParts.length < 2) return;
+    if (!localUrl || !localUrl.startsWith('/uploads/')) return;
 
-    const filePath = pathParts[1];
-    await supabase.storage.from('products').remove([filePath]);
+    const fileName = localUrl.replace('/uploads/', '');
+    const filePath = path.join(process.cwd(), 'public/uploads', fileName);
+
+    if (fs.existsSync(filePath)) {
+      fs.unlinkSync(filePath);
+    }
   } catch (error) {
-    console.error('Failed to delete file from storage:', error.message);
+    console.error('Failed to delete file from local storage:', error.message);
   }
 };
