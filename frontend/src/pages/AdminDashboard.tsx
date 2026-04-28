@@ -26,6 +26,7 @@ interface ProductFormData {
   kategori: Kategori | '';
   deskripsi: string;
   isAvailable: boolean;
+  link: string;
 }
 
 const emptyForm: ProductFormData = {
@@ -39,6 +40,7 @@ const emptyForm: ProductFormData = {
   kategori: '',
   deskripsi: '',
   isAvailable: true,
+  link: '',
 };
 
 const MAX_TOTAL_UPLOAD_BYTES = 4 * 1024 * 1024;
@@ -156,6 +158,7 @@ export const AdminProductList: React.FC<AdminProductListProps> = ({ products, lo
       kategori: (product.kategori as Kategori) || '',
       deskripsi: product.deskripsi || '',
       isAvailable: product.isAvailable ?? true,
+      link: product.link || '',
     });
     setNewFiles([]);
     setDeletedMediaIds([]);
@@ -216,6 +219,7 @@ export const AdminProductList: React.FC<AdminProductListProps> = ({ products, lo
       if (formData.kategori) fd.append('kategori', formData.kategori);
       if (formData.deskripsi) fd.append('deskripsi', formData.deskripsi);
       fd.append('isAvailable', String(formData.isAvailable));
+      if (formData.link) fd.append('link', formData.link);
       newFiles.forEach((file) => fd.append('media', file));
 
       if (editingProduct) {
@@ -699,6 +703,17 @@ export const AdminProductList: React.FC<AdminProductListProps> = ({ products, lo
                       value={formData.deskripsi}
                       onChange={set('deskripsi')}
                       className={`${inputCls} resize-none`}
+                    />
+                  </Field>
+
+                  {/* Shopee Link */}
+                  <Field label="Shopee Link">
+                    <input
+                      type="url"
+                      placeholder="https://shopee.co.id/product-link"
+                      value={formData.link}
+                      onChange={set('link')}
+                      className={inputCls}
                     />
                   </Field>
 

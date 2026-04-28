@@ -266,7 +266,7 @@ export default function ProductDetail() {
                 {product.isAvailable ? "Pesan via WhatsApp" : "Sold Out"}
               </a>
               <a
-                href={product.isAvailable ? "https://shopee.co.id/abyky.of" : undefined}
+                href={product.isAvailable ? (product.link || "https://shopee.co.id/abyky.of") : undefined}
                 target={product.isAvailable ? "_blank" : undefined}
                 rel={product.isAvailable ? "noopener noreferrer" : undefined}
                 className={`flex items-center justify-center gap-3 font-sans text-[12px] tracking-[0.2em] uppercase py-4 transition-colors duration-300 ${

@@ -113,7 +113,7 @@ function parseBooleanInput(value, fallback = undefined) {
 
 export const createProduct = async (req, res, next) => {
   try {
-    const { kode, nama, brand, bahan, ukuran, warna, harga, kategori, deskripsi, isAvailable } = req.body;
+    const { kode, nama, brand, bahan, ukuran, warna, harga, kategori, deskripsi, isAvailable, link } = req.body;
 
     if (!kode || !brand || !bahan || !ukuran || !warna || !harga) {
       return res.status(400).json({
@@ -136,6 +136,7 @@ export const createProduct = async (req, res, next) => {
         kategori: toKategoriEnum(kategori),
         deskripsi: deskripsi || null,
         isAvailable: parseBooleanInput(isAvailable, true),
+        link: link || null,
         media: {
           create: mediaResults.map((m, index) => ({
             url: m.url,
@@ -232,7 +233,7 @@ export const getProductById = async (req, res, next) => {
 export const updateProduct = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const { kode, nama, brand, bahan, ukuran, warna, harga, kategori, deskripsi, deletedMedia, isAvailable } = req.body;
+    const { kode, nama, brand, bahan, ukuran, warna, harga, kategori, deskripsi, deletedMedia, isAvailable, link } = req.body;
 
     const existingProduct = await prisma.product.findUnique({
       where: { id },
@@ -276,6 +277,7 @@ export const updateProduct = async (req, res, next) => {
         kategori:  kategori  !== undefined ? toKategoriEnum(kategori): existingProduct.kategori,
         deskripsi: deskripsi !== undefined ? deskripsi || null       : existingProduct.deskripsi,
         isAvailable: parseBooleanInput(isAvailable, existingProduct.isAvailable),
+        link:      link      !== undefined ? link || null            : existingProduct.link,
         media: {
           create: mediaResults.map((m, index) => ({
             url: m.url,

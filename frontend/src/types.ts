@@ -113,6 +113,7 @@ export interface Product {
   isHeroFeatured: boolean;
   isVisible: boolean;
   isAvailable: boolean;
+  link: string | null;
   created_at: string;
   updated_at: string;
   media: Media[] | null;
