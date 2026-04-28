@@ -98,11 +98,22 @@ function parseUkuranInput(raw) {
   return toUkuranEnum(arr);
 }
 
+function parseBooleanInput(value, fallback = undefined) {
+  if (value === undefined || value === null || value === '') return fallback;
+  if (typeof value === 'boolean') return value;
+  if (typeof value === 'string') {
+    const normalized = value.trim().toLowerCase();
+    if (normalized === 'true') return true;
+    if (normalized === 'false') return false;
+  }
+  return fallback;
+}
+
 // ─── Controllers ─────────────────────────────────────────────────────────────
 
 export const createProduct = async (req, res, next) => {
   try {
-    const { kode, nama, brand, bahan, ukuran, warna, harga, kategori, deskripsi } = req.body;
+    const { kode, nama, brand, bahan, ukuran, warna, harga, kategori, deskripsi, isAvailable } = req.body;
 
     if (!kode || !brand || !bahan || !ukuran || !warna || !harga) {
       return res.status(400).json({
@@ -124,6 +135,7 @@ export const createProduct = async (req, res, next) => {
         harga: parseFloat(harga),
         kategori: toKategoriEnum(kategori),
         deskripsi: deskripsi || null,
+        isAvailable: parseBooleanInput(isAvailable, true),
         media: {
           create: mediaResults.map((m, index) => ({
             url: m.url,
@@ -220,7 +232,7 @@ export const getProductById = async (req, res, next) => {
 export const updateProduct = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const { kode, nama, brand, bahan, ukuran, warna, harga, kategori, deskripsi, deletedMedia } = req.body;
+    const { kode, nama, brand, bahan, ukuran, warna, harga, kategori, deskripsi, deletedMedia, isAvailable } = req.body;
 
     const existingProduct = await prisma.product.findUnique({
       where: { id },
@@ -263,6 +275,7 @@ export const updateProduct = async (req, res, next) => {
         harga:     harga     !== undefined ? parseFloat(harga)       : existingProduct.harga,
         kategori:  kategori  !== undefined ? toKategoriEnum(kategori): existingProduct.kategori,
         deskripsi: deskripsi !== undefined ? deskripsi || null       : existingProduct.deskripsi,
+        isAvailable: parseBooleanInput(isAvailable, existingProduct.isAvailable),
         media: {
           create: mediaResults.map((m, index) => ({
             url: m.url,
@@ -322,11 +335,11 @@ export const updateProductPages = async (req, res, next) => {
     const updated = await prisma.product.update({
       where: { id },
       data: {
-        isTrending:     isTrending     !== undefined ? Boolean(isTrending)     : existing.isTrending,
-        isSale:         isSale         !== undefined ? Boolean(isSale)         : existing.isSale,
-        isHeroFeatured: isHeroFeatured !== undefined ? Boolean(isHeroFeatured) : existing.isHeroFeatured,
-        isVisible:      isVisible      !== undefined ? Boolean(isVisible)      : existing.isVisible,
-        isAvailable:    isAvailable    !== undefined ? Boolean(isAvailable)    : existing.isAvailable,
+        isTrending:     parseBooleanInput(isTrending, existing.isTrending),
+        isSale:         parseBooleanInput(isSale, existing.isSale),
+        isHeroFeatured: parseBooleanInput(isHeroFeatured, existing.isHeroFeatured),
+        isVisible:      parseBooleanInput(isVisible, existing.isVisible),
+        isAvailable:    parseBooleanInput(isAvailable, existing.isAvailable),
       },
       include: { media: { orderBy: { order: 'asc' } } },
     });

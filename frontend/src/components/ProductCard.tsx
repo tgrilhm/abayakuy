@@ -11,6 +11,7 @@ export interface ProductCardProps {
   aspectRatio?: "3/4" | "2/3";
   isSmall?: boolean;
   isAvailable?: boolean;
+  showAvailabilityText?: boolean;
 }
 
 export default function ProductCard({
@@ -22,6 +23,7 @@ export default function ProductCard({
   aspectRatio = "3/4",
   isSmall = false,
   isAvailable = true,
+  showAvailabilityText = false,
 }: ProductCardProps) {
   const [loaded, setLoaded] = useState(false);
   const [wishlisted, setWishlisted] = useState(false);
@@ -101,6 +103,15 @@ export default function ProductCard({
         >
           {isNaN(Number(price)) ? price : `Rp ${Number(price).toLocaleString('id-ID')}`}
         </p>
+        {showAvailabilityText && (
+          <p
+            className={`mt-2 font-sans text-[10px] uppercase tracking-[0.18em] ${
+              isAvailable ? "text-emerald-700" : "text-rose-700"
+            }`}
+          >
+            {isAvailable ? "Available" : "Sold Out"}
+          </p>
+        )}
       </div>
     </Link>
   );

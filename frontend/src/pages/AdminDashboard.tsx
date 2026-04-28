@@ -25,6 +25,7 @@ interface ProductFormData {
   harga: string;
   kategori: Kategori | '';
   deskripsi: string;
+  isAvailable: boolean;
 }
 
 const emptyForm: ProductFormData = {
@@ -37,6 +38,7 @@ const emptyForm: ProductFormData = {
   harga: '',
   kategori: '',
   deskripsi: '',
+  isAvailable: true,
 };
 
 const MAX_TOTAL_UPLOAD_BYTES = 4 * 1024 * 1024;
@@ -153,6 +155,7 @@ export const AdminProductList: React.FC<AdminProductListProps> = ({ products, lo
       harga: String(product.harga ?? ''),
       kategori: (product.kategori as Kategori) || '',
       deskripsi: product.deskripsi || '',
+      isAvailable: product.isAvailable ?? true,
     });
     setNewFiles([]);
     setDeletedMediaIds([]);
@@ -212,6 +215,7 @@ export const AdminProductList: React.FC<AdminProductListProps> = ({ products, lo
       fd.append('harga', formData.harga);
       if (formData.kategori) fd.append('kategori', formData.kategori);
       if (formData.deskripsi) fd.append('deskripsi', formData.deskripsi);
+      fd.append('isAvailable', String(formData.isAvailable));
       newFiles.forEach((file) => fd.append('media', file));
 
       if (editingProduct) {
@@ -657,6 +661,33 @@ export const AdminProductList: React.FC<AdminProductListProps> = ({ products, lo
                           </label>
                         );
                       })}
+                    </div>
+                  </Field>
+
+                  <Field label="Availability">
+                    <div className="grid grid-cols-2 gap-2 pt-1">
+                      <button
+                        type="button"
+                        onClick={() => setFormData((prev) => ({ ...prev, isAvailable: true }))}
+                        className={`py-2.5 border transition-all duration-150 font-sans text-[11px] tracking-[0.12em] uppercase ${
+                          formData.isAvailable
+                            ? 'bg-emerald-700 text-white border-emerald-700'
+                            : 'bg-stone-50 text-stone-500 border-stone-200 hover:border-stone-500 hover:text-stone-800'
+                        }`}
+                      >
+                        Available
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setFormData((prev) => ({ ...prev, isAvailable: false }))}
+                        className={`py-2.5 border transition-all duration-150 font-sans text-[11px] tracking-[0.12em] uppercase ${
+                          !formData.isAvailable
+                            ? 'bg-rose-700 text-white border-rose-700'
+                            : 'bg-stone-50 text-stone-500 border-stone-200 hover:border-stone-500 hover:text-stone-800'
+                        }`}
+                      >
+                        Sold Out
+                      </button>
                     </div>
                   </Field>
 
