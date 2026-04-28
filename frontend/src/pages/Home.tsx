@@ -4,12 +4,9 @@ import ProductCard from "../components/ProductCard";
 import { api } from "../api";
 import { Product, Media } from "../types";
 
-// ─── Hero Slider ──────────────────────────────────────────────────────────────
-const FALLBACK_IMG = "https://lh3.googleusercontent.com/aida-public/AB6AXuA3pKYuUdiTaPjYba7P1vbmlaBVJdBTtDBB_KtLhGNVIAvi8s5WwEvc0xV0MuLcZtHXiBSbmDjDpR6JCIvsIXtgeeN-5kYehXnAra4WgIU4LwGoT-bxSMDyU7zfVcRwAgwS8AWkaoN4hyTwdBDtN0Yf0PSSwekvo9LoUnXcwILSpjCPkCJ8kSacs9TuVFY0KXrB81Xby-QPjCLHBdk6KpUHc_6mc6xPIqShpBW7wUlSxuWYErYNlgXBSIPfuM6FIy_or7rGLgGj8jI";
-
 function HeroSlider({ heroProduct }: { heroProduct: Product | null }) {
   const images: Media[] = heroProduct?.media?.filter((m) => m.type === "image") ?? [];
-  const slides = images.length > 0 ? images : [{ id: "fallback", url: FALLBACK_IMG, type: "image" as const, order: 0 }];
+  const slides = images;
   const [current, setCurrent] = useState(0);
 
   useEffect(() => {
@@ -20,6 +17,8 @@ function HeroSlider({ heroProduct }: { heroProduct: Product | null }) {
 
   const prev = () => setCurrent((c) => (c - 1 + slides.length) % slides.length);
   const next = () => setCurrent((c) => (c + 1) % slides.length);
+
+  if (slides.length === 0) return null;
 
   return (
     <div className="relative w-full h-[80vh] min-h-[520px] max-h-[860px] bg-surface-container overflow-hidden grain-overlay">
