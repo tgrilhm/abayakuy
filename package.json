@@ -5,12 +5,13 @@
   "main": "src/app.js",
   "type": "module",
   "scripts": {
-    "build": "prisma generate && npm run frontend:install && npm run frontend:build",
+    "postinstall": "prisma generate",
+    "build": "npm run frontend:install && npm run frontend:build",
     "dev": "nodemon src/app.js",
     "start": "node src/app.js",
     "frontend:dev": "npm --prefix frontend run dev",
     "frontend:build": "npm --prefix frontend run build",
-    "frontend:install": "npm --prefix frontend install"
+    "frontend:install": "npm --prefix frontend install --include=dev"
   },
   "keywords": [],
   "author": "",
