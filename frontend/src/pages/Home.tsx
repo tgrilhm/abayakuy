@@ -226,7 +226,9 @@ export default function Home() {
             <span className="font-sans text-[9px] tracking-[0.3em] text-stone-300 uppercase select-none">02</span>
             <h2 className="font-serif text-[clamp(1.2rem,2.5vw,1.6rem)] text-on-background">The Catalog</h2>
           </div>
-          <SortDropdown sort={sort} setSort={setSort} />
+          <div className="w-full md:w-auto flex justify-end">
+            <SortDropdown sort={sort} setSort={setSort} />
+          </div>
         </div>
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-x-6 gap-y-12">
