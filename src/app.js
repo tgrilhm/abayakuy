@@ -61,43 +61,43 @@ app.use('/api/health', healthRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/products', productRoutes);
 
-// ─── Serve Frontend in Production ───
-const frontendPath = path.join(__dirname, '../frontend/dist');
-app.use(express.static(frontendPath));
+// ─── Serve Frontend ───
+if (process.env.VERCEL) {
+  // On Vercel, static files and rewrites are handled by vercel.json
+  // We don't need to serve frontend/dist manually here
+} else {
+  // On VPS/Local, we serve the frontend/dist folder
+  const frontendPath = path.join(__dirname, '../frontend/dist');
+  app.use(express.static(frontendPath));
+  
+  // Serve Uploads (Images/Videos) - ONLY on VPS
+  app.use('/uploads', express.static(path.join(process.cwd(), 'public/uploads')));
 
-// ─── Serve Uploads (Images/Videos) ───
-app.use('/uploads', express.static(path.join(process.cwd(), 'public/uploads')));
-
-// ─── API 404 handler ───
-app.use('/api/*', (req, res) => {
-  res.status(404).json({ error: `Route not found: ${req.method} ${req.path}` });
-});
-
-// ─── Catch-all for Frontend (SPA support) ───
-app.get('*', (req, res) => {
-  if (req.path.startsWith('/api')) return;
-  res.sendFile(path.join(frontendPath, 'index.html'), (err) => {
-    if (err) {
-      // If index.html is missing, we might be in dev mode or build failed
-      if (process.env.NODE_ENV === 'production') {
+  // Catch-all for Frontend (SPA support) - ONLY on VPS
+  app.get('*', (req, res) => {
+    if (req.path.startsWith('/api')) return;
+    res.sendFile(path.join(frontendPath, 'index.html'), (err) => {
+      if (err) {
         res.status(404).send('Frontend build not found. Run npm run build.');
-      } else {
-        res.status(404).send('Not Found (Development Mode)');
       }
-    }
+    });
   });
-});
+}
 
 // ─── Global error handler ───
 app.use(errorHandler);
 
 const PORT = process.env.PORT || 3000;
 
-app.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`);
-  if (missingEnv.length > 0) {
-    console.warn(`WARNING: Missing env vars: ${missingEnv.join(', ')}`);
-  }
-});
+// Only start the server if NOT on Vercel
+// Vercel handles the listener automatically via api/index.js
+if (!process.env.VERCEL) {
+  app.listen(PORT, () => {
+    console.log(`Server is running on port ${PORT}`);
+    if (missingEnv.length > 0) {
+      console.warn(`WARNING: Missing env vars: ${missingEnv.join(', ')}`);
+    }
+  });
+}
 
 export default app;
