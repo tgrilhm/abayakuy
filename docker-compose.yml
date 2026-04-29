@@ -1,0 +1,43 @@
+version: '3.8'
+
+services:
+  # --- Backend Service ---
+  backend:
+    build: .
+    container_name: abaya-backend
+    restart: always
+    env_file: .env
+    ports:
+      - "3000:3000"
+    # Menunggu database jika perlu (tapi jika menggunakan Supabase, ini tidak wajib)
+    networks:
+      - abaya-network
+
+  # --- Frontend Service ---
+  frontend:
+    build: ./frontend
+    container_name: abaya-frontend
+    restart: always
+    ports:
+      - "8080:80"
+    networks:
+      - abaya-network
+
+  # --- Nginx Proxy Manager (GUI untuk Manage Domain & SSL) ---
+  nginx-proxy-manager:
+    image: 'jc21/nginx-proxy-manager:latest'
+    container_name: npm
+    restart: always
+    ports:
+      - '80:80'    # HTTP
+      - '81:81'    # Admin Panel GUI
+      - '443:443'  # HTTPS
+    volumes:
+      - ./npm/data:/data
+      - ./npm/letsencrypt:/etc/letsencrypt
+    networks:
+      - abaya-network
+
+networks:
+  abaya-network:
+    driver: bridge
