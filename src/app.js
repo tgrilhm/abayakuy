@@ -61,7 +61,7 @@ app.use('/uploads', express.static('uploads', {
 import path from 'path';
 import fs from 'fs';
 
-app.get('/stream/video/:filename', (req, res) => {
+app.get('/api/products/stream/:filename', (req, res) => {
   const filePath = path.join(process.cwd(), 'uploads', req.params.filename);
   
   if (!fs.existsSync(filePath)) {
