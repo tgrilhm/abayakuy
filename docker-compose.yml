@@ -90,4 +90,4 @@ services:
 
 networks:
   abaya-network:
-    driver: bridge
+    external: true
