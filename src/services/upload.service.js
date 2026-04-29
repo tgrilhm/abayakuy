@@ -1,5 +1,5 @@
-import fs from 'fs/promises';
 import path from 'path';
+import fs from 'fs/promises';
 
 const UPLOAD_DIR = path.join(process.cwd(), 'uploads');
 
@@ -13,19 +13,17 @@ async function ensureDir() {
 }
 
 /**
- * Upload a single file to local storage.
+ * Convert a stored upload into the app's public media shape.
  * @param {object} file - Multer file object
  * @returns {{ url: string, type: string }} - Public URL path and file type
  */
 export const uploadFile = async (file) => {
   await ensureDir();
 
-  const fileExt = file.originalname.split('.').pop();
-  const fileName = `${Date.now()}-${Math.random().toString(36).substring(2, 15)}.${fileExt}`;
-  const filePath = path.join(UPLOAD_DIR, fileName);
-
-  // Write file to disk
-  await fs.writeFile(filePath, file.buffer);
+  const fileName = file.filename || path.basename(file.path || '');
+  if (!fileName) {
+    throw new Error('Uploaded file is missing a filename');
+  }
 
   // Determine type based on mimetype
   const type = file.mimetype.startsWith('video/') ? 'video' : 'image';

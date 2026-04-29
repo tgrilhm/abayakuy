@@ -1,7 +1,27 @@
+import fs from 'fs';
+import path from 'path';
 import multer from 'multer';
 
-// Use memory storage so we can upload the buffer directly to Supabase
-const storage = multer.memoryStorage();
+const UPLOAD_DIR = path.join(process.cwd(), 'uploads');
+
+function ensureUploadDir() {
+  if (!fs.existsSync(UPLOAD_DIR)) {
+    fs.mkdirSync(UPLOAD_DIR, { recursive: true });
+  }
+}
+
+// Write uploads straight to disk to avoid large in-memory buffers.
+const storage = multer.diskStorage({
+  destination: (_req, _file, cb) => {
+    ensureUploadDir();
+    cb(null, UPLOAD_DIR);
+  },
+  filename: (_req, file, cb) => {
+    const fileExt = path.extname(file.originalname);
+    const fileName = `${Date.now()}-${Math.random().toString(36).substring(2, 15)}${fileExt}`;
+    cb(null, fileName);
+  },
+});
 
 // File filter: only accept images and videos
 const fileFilter = (req, file, cb) => {

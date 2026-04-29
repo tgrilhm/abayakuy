@@ -55,6 +55,18 @@ services:
     networks:
       - abaya-network
 
+  # --- Uptime Kuma (Monitoring Tool) ---
+  uptime-kuma:
+    image: 'louislam/uptime-kuma:1'
+    container_name: uptime-kuma
+    restart: always
+    volumes:
+      - ./uptime-kuma:/app/data
+    ports:
+      - '3001:3001' # Akses GUI Uptime Kuma
+    networks:
+      - abaya-network
+
 networks:
   abaya-network:
     driver: bridge
