@@ -52,20 +52,23 @@ export const uploadFile = async (file) => {
     const mp4Name = `${path.parse(fileName).name}-optimized.mp4`;
     const mp4Path = path.join(UPLOAD_DIR, mp4Name);
 
+    // We still return a promise, but we use 'ultrafast' preset to minimize wait time.
+    // For a real production app, this should be a background job (BullMQ/Redis).
     return new Promise((resolve) => {
       ffmpeg(filePath)
         .outputOptions([
-          '-c:v libx264',    // Video codec: H.264
-          '-crf 28',         // Constant Rate Factor (23 is default, 28 is smaller/lower quality)
-          '-preset faster',   // Encoding speed
-          '-c:a aac',        // Audio codec: AAC
-          '-b:a 128k',       // Audio bitrate
-          '-movflags +faststart' // Enable fast start for web streaming
+          '-c:v libx264',
+          '-crf 28',
+          '-preset ultrafast', // Use ultrafast for quicker response
+          '-tune animation',    // Optimization for faster encoding
+          '-c:a aac',
+          '-b:a 96k',
+          '-movflags +faststart'
         ])
         .save(mp4Path)
         .on('end', async () => {
           try {
-            await fs.unlink(filePath); // Delete original large video
+            await fs.unlink(filePath);
             resolve({ url: `/uploads/${mp4Name}`, type: 'video' });
           } catch (err) {
             resolve({ url: `/uploads/${fileName}`, type: 'video' });

@@ -86,8 +86,15 @@ export default function ProductDetail() {
                     key={selectedMedia.url}
                     src={selectedMedia.url}
                     controls
+                    playsInline
+                    muted
+                    autoPlay
+                    loop
                     className="w-full h-full object-cover"
-                  />
+                  >
+                    <source src={selectedMedia.url} type="video/mp4" />
+                    Your browser does not support the video tag.
+                  </video>
                 ) : (
                   <img
                     key={selectedMedia.url}
