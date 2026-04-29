@@ -52,33 +52,40 @@ export const uploadFile = async (file) => {
     const mp4Name = `${path.parse(fileName).name}-optimized.mp4`;
     const mp4Path = path.join(UPLOAD_DIR, mp4Name);
 
-    // We still return a promise, but we use 'ultrafast' preset to minimize wait time.
-    // For a real production app, this should be a background job (BullMQ/Redis).
+    console.log(`[FFMPEG]: Starting optimization for ${fileName}`);
+
     return new Promise((resolve) => {
       ffmpeg(filePath)
         .outputOptions([
           '-c:v libx264',
-          '-pix_fmt yuv420p',  // Standard pixel format for web compatibility
+          '-pix_fmt yuv420p',
           '-crf 28',
-          '-preset ultrafast',
-          '-tune animation',
+          '-preset fast',
+          '-vf scale=trunc(iw/2)*2:trunc(ih/2)*2', // Ensure even dimensions (required for H.264)
           '-c:a aac',
-          '-b:a 96k',
+          '-b:a 128k',
           '-movflags +faststart'
         ])
-        .save(mp4Path)
+        .toFormat('mp4')
+        .on('start', (commandLine) => {
+          console.log('[FFMPEG]: Spawned with command: ' + commandLine);
+        })
+        .on('error', (err, stdout, stderr) => {
+          console.error('[FFMPEG ERROR]:', err.message);
+          console.error('[FFMPEG STDERR]:', stderr);
+          resolve({ url: `/uploads/${fileName}`, type: 'video' }); // Fallback
+        })
         .on('end', async () => {
+          console.log(`[FFMPEG]: Finished optimization for ${mp4Name}`);
           try {
-            await fs.unlink(filePath);
+            await fs.unlink(filePath); // Delete original
             resolve({ url: `/uploads/${mp4Name}`, type: 'video' });
           } catch (err) {
-            resolve({ url: `/uploads/${fileName}`, type: 'video' });
+            console.error('[FFMPEG]: Failed to delete original file:', err.message);
+            resolve({ url: `/uploads/${mp4Name}`, type: 'video' });
           }
         })
-        .on('error', (err) => {
-          console.error('Video optimization failed:', err.message);
-          resolve({ url: `/uploads/${fileName}`, type: 'video' });
-        });
+        .save(mp4Path);
     });
   }
 
