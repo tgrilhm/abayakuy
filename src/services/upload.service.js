@@ -58,10 +58,12 @@ export const uploadFile = async (file) => {
       ffmpeg(filePath)
         .outputOptions([
           '-c:v libx264',
+          '-profile:v main',    // High compatibility profile
+          '-level 3.1',         // Compatibility level for mobile
           '-pix_fmt yuv420p',
           '-crf 28',
           '-preset fast',
-          '-vf scale=trunc(iw/2)*2:trunc(ih/2)*2', // Ensure even dimensions (required for H.264)
+          '-vf scale=trunc(iw/2)*2:trunc(ih/2)*2',
           '-c:a aac',
           '-b:a 128k',
           '-movflags +faststart'

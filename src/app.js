@@ -22,7 +22,8 @@ const app = express();
 
 // ─── Middleware ───
 app.use(helmet({
-  contentSecurityPolicy: false, // Handled by Nginx or specifically configured if needed
+  contentSecurityPolicy: false,
+  crossOriginResourcePolicy: { policy: "cross-origin" },
 }));
 app.use(compression());
 

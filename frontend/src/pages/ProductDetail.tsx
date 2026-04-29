@@ -89,9 +89,10 @@ export default function ProductDetail() {
                     muted
                     autoPlay
                     loop
+                    crossOrigin="anonymous"
                     className="w-full h-full object-cover"
                   >
-                    <source src={`/api/products/stream/${selectedMedia.url.split('/').pop()}`} type="video/mp4" />
+                    <source src={selectedMedia.url} type="video/mp4" />
                     Your browser does not support the video tag.
                   </video>
                 ) : (
