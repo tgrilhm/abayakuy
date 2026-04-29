@@ -84,7 +84,6 @@ export default function ProductDetail() {
                 selectedMedia.type === "video" ? (
                   <video
                     key={selectedMedia.url}
-                    src={selectedMedia.url}
                     controls
                     playsInline
                     muted
