@@ -58,9 +58,10 @@ export const uploadFile = async (file) => {
       ffmpeg(filePath)
         .outputOptions([
           '-c:v libx264',
+          '-pix_fmt yuv420p',  // Standard pixel format for web compatibility
           '-crf 28',
-          '-preset ultrafast', // Use ultrafast for quicker response
-          '-tune animation',    // Optimization for faster encoding
+          '-preset ultrafast',
+          '-tune animation',
           '-c:a aac',
           '-b:a 96k',
           '-movflags +faststart'
