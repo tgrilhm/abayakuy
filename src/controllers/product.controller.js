@@ -116,13 +116,13 @@ function parseOptionalUrl(value) {
   const trimmed = String(value).trim();
   if (!trimmed) return null;
 
-  try {
-    const url = new URL(trimmed);
-    if (url.protocol !== 'http:' && url.protocol !== 'https:') return null;
-    return trimmed;
-  } catch {
+  // Keep validation intentionally broad so short links like
+  // https://id.shp.ee/... are accepted without browser/parser edge cases.
+  if (!/^https?:\/\//i.test(trimmed)) {
     return null;
   }
+
+  return trimmed;
 }
 
 // ─── Controllers ─────────────────────────────────────────────────────────────

@@ -551,11 +551,14 @@ export const AdminProductList: React.FC<AdminProductListProps> = ({ products, lo
 
                   <Field label="Shopee Link">
                     <input
-                      type="url"
+                      type="text"
                       placeholder="https://shopee.co.id/..."
                       value={formData.shopeeUrl}
                       onChange={set('shopeeUrl')}
                       className={inputCls}
+                      autoCapitalize="off"
+                      autoCorrect="off"
+                      spellCheck={false}
                     />
                   </Field>
 
