@@ -21,15 +21,8 @@ FROM nginx:stable-alpine as production-stage
 # Salin hasil build dari tahap 1 ke folder default Nginx
 COPY --from=build-stage /app/dist /usr/share/nginx/html
 
-# Tambahkan konfigurasi Nginx sederhana jika diperlukan untuk SPA (Single Page Application)
-RUN echo 'server { \
-    listen 80; \
-    location / { \
-        root /usr/share/nginx/html; \
-        index index.html; \
-        try_files $uri $uri/ /index.html; \
-    } \
-}' > /etc/nginx/conf.d/default.conf
+# Route SPA traffic locally and forward /api requests to the backend container.
+COPY nginx.conf /etc/nginx/conf.d/default.conf
 
 EXPOSE 80
 

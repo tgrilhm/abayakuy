@@ -12,6 +12,11 @@ services:
       POSTGRES_DB: abaya_db
     volumes:
       - ./postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U abaya_user -d abaya_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
     networks:
       - abaya-network
 
@@ -22,7 +27,8 @@ services:
     restart: always
     env_file: .env
     depends_on:
-      - db
+      db:
+        condition: service_healthy
     ports:
       - "3000:3000"
     volumes:
@@ -35,6 +41,8 @@ services:
     build: ./frontend
     container_name: abaya-frontend
     restart: always
+    depends_on:
+      - backend
     ports:
       - "8080:80"
     networks:
