@@ -1,5 +1,6 @@
 import path from 'path';
 import fs from 'fs/promises';
+import sharp from 'sharp';
 
 const UPLOAD_DIR = path.join(process.cwd(), 'uploads');
 
@@ -14,6 +15,7 @@ async function ensureDir() {
 
 /**
  * Convert a stored upload into the app's public media shape.
+ * If it's an image, convert it to WebP and optimize.
  * @param {object} file - Multer file object
  * @returns {{ url: string, type: string }} - Public URL path and file type
  */
@@ -25,10 +27,37 @@ export const uploadFile = async (file) => {
     throw new Error('Uploaded file is missing a filename');
   }
 
-  // Determine type based on mimetype
+  const filePath = path.join(UPLOAD_DIR, fileName);
   const type = file.mimetype.startsWith('video/') ? 'video' : 'image';
 
-  // Return relative URL for Nginx/Express to serve
+  if (type === 'image') {
+    const webpName = `${path.parse(fileName).name}.webp`;
+    const webpPath = path.join(UPLOAD_DIR, webpName);
+
+    try {
+      // Convert to WebP with sharp
+      await sharp(filePath)
+        .webp({ quality: 80 })
+        .toFile(webpPath);
+
+      // Delete the original (non-webp) file to save space
+      await fs.unlink(filePath);
+
+      return {
+        url: `/uploads/${webpName}`,
+        type: 'image',
+      };
+    } catch (error) {
+      console.error('Image optimization failed, falling back to original:', error.message);
+      // If optimization fails, fall back to the original file
+      return {
+        url: `/uploads/${fileName}`,
+        type: 'image',
+      };
+    }
+  }
+
+  // Videos are returned as-is
   return {
     url: `/uploads/${fileName}`,
     type,

@@ -1,5 +1,6 @@
 import prisma from '../config/prisma.js';
 import { uploadFiles, deleteFile } from '../services/upload.service.js';
+import { getOrCache, invalidateCache } from '../config/redis.js';
 
 // ─── Enum mappings ───────────────────────────────────────────────────────────
 // Maps the display string sent from the frontend to the Prisma enum key.
@@ -169,6 +170,9 @@ export const createProduct = async (req, res, next) => {
       include: { media: { orderBy: { order: 'asc' } } },
     });
 
+    // Invalidate product caches
+    await invalidateCache('products:*');
+
     res.status(201).json(product);
   } catch (error) {
     next(error);
@@ -183,36 +187,42 @@ export const getProducts = async (req, res, next) => {
     const limitNum = Math.min(100, Math.max(1, parseInt(limit, 10)));
     const skip = (pageNum - 1) * limitNum;
 
-    let where = {};
-    if (kategori) {
-      const enumKey = KATEGORI_MAP[kategori] || kategori;
-      where = { ...where, kategori: enumKey };
-    }
-    if (pageName === 'trending') where = { ...where, isTrending: true };
-    if (pageName === 'sale')     where = { ...where, isSale: true };
-    // Always filter out hidden products on public storefront
-    where = { ...where, isVisible: true };
+    const cacheKey = `products:list:${kategori || 'all'}:${pageName || 'none'}:${pageNum}:${limitNum}`;
 
-    const [products, total] = await Promise.all([
-      prisma.product.findMany({
-        where,
-        skip,
-        take: limitNum,
-        orderBy: { created_at: 'desc' },
-        include: { media: { orderBy: { order: 'asc' } } },
-      }),
-      prisma.product.count({ where }),
-    ]);
+    const result = await getOrCache(cacheKey, async () => {
+      let where = {};
+      if (kategori) {
+        const enumKey = KATEGORI_MAP[kategori] || kategori;
+        where = { ...where, kategori: enumKey };
+      }
+      if (pageName === 'trending') where = { ...where, isTrending: true };
+      if (pageName === 'sale')     where = { ...where, isSale: true };
+      // Always filter out hidden products on public storefront
+      where = { ...where, isVisible: true };
 
-    res.status(200).json({
-      data: products,
-      pagination: {
-        page: pageNum,
-        limit: limitNum,
-        total,
-        pages: Math.ceil(total / limitNum),
-      },
-    });
+      const [products, total] = await Promise.all([
+        prisma.product.findMany({
+          where,
+          skip,
+          take: limitNum,
+          orderBy: { created_at: 'desc' },
+          include: { media: { orderBy: { order: 'asc' } } },
+        }),
+        prisma.product.count({ where }),
+      ]);
+
+      return {
+        data: products,
+        pagination: {
+          page: pageNum,
+          limit: limitNum,
+          total,
+          pages: Math.ceil(total / limitNum),
+        },
+      };
+    }, 600); // Cache for 10 minutes
+
+    res.status(200).json(result);
   } catch (error) {
     next(error);
   }
@@ -221,10 +231,14 @@ export const getProducts = async (req, res, next) => {
 // GET /api/products/hero — returns the single hero-featured product (public)
 export const getHeroProduct = async (req, res, next) => {
   try {
-    const product = await prisma.product.findFirst({
-      where: { isHeroFeatured: true },
-      include: { media: { orderBy: { order: 'asc' } } },
-    });
+    const cacheKey = 'products:hero';
+    const product = await getOrCache(cacheKey, async () => {
+      return prisma.product.findFirst({
+        where: { isHeroFeatured: true },
+        include: { media: { orderBy: { order: 'asc' } } },
+      });
+    }, 3600);
+    
     // Return null gracefully if none is set
     res.status(200).json(product ?? null);
   } catch (error) {
@@ -235,11 +249,14 @@ export const getHeroProduct = async (req, res, next) => {
 export const getProductById = async (req, res, next) => {
   try {
     const { id } = req.params;
+    const cacheKey = `products:single:${id}`;
 
-    const product = await prisma.product.findUnique({
-      where: { id },
-      include: { media: { orderBy: { order: 'asc' } } },
-    });
+    const product = await getOrCache(cacheKey, async () => {
+      return prisma.product.findUnique({
+        where: { id },
+        include: { media: { orderBy: { order: 'asc' } } },
+      });
+    }, 3600);
 
     if (!product) {
       return res.status(404).json({ error: 'Product not found' });
@@ -315,6 +332,9 @@ export const updateProduct = async (req, res, next) => {
       include: { media: { orderBy: { order: 'asc' } } },
     });
 
+    // Invalidate product caches
+    await invalidateCache('products:*');
+
     res.status(200).json(updatedProduct);
   } catch (error) {
     next(error);
@@ -336,6 +356,9 @@ export const deleteProduct = async (req, res, next) => {
 
     for (const mediaItem of existingProduct.media) await deleteFile(mediaItem.url);
     await prisma.product.delete({ where: { id } });
+
+    // Invalidate product caches
+    await invalidateCache('products:*');
 
     res.status(200).json({ message: 'Product deleted successfully' });
   } catch (error) {
@@ -371,6 +394,9 @@ export const updateProductPages = async (req, res, next) => {
       },
       include: { media: { orderBy: { order: 'asc' } } },
     });
+
+    // Invalidate product caches
+    await invalidateCache('products:*');
 
     res.status(200).json(updated);
   } catch (error) {
