@@ -70,6 +70,7 @@ services:
     restart: always
     volumes:
       - ./uptime-kuma:/app/data
+      - /var/run/docker.sock:/var/run/docker.sock # For container monitoring
     ports:
       - '3001:3001' # Akses GUI Uptime Kuma
     networks:

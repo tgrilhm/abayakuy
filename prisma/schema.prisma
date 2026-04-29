@@ -76,6 +76,11 @@ model Product {
 
   media Media[]
 
+  @@index([kategori])
+  @@index([isTrending])
+  @@index([isSale])
+  @@index([isVisible])
+  @@index([created_at])
   @@map("products")
 }
 
