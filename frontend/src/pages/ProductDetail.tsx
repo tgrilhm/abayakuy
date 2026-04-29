@@ -55,6 +55,7 @@ export default function ProductDetail() {
   const allMedia = product.media ?? [];
   const images = allMedia.filter((m) => m.type === "image");
   const videos = allMedia.filter((m) => m.type === "video");
+  const hasShopeeLink = product.isAvailable && !!product.shopeeUrl;
 
   const formatPrice = (p: number | null) =>
     p != null ? `Rp ${p.toLocaleString('id-ID')}` : "—";
@@ -266,16 +267,16 @@ export default function ProductDetail() {
                 {product.isAvailable ? "Pesan via WhatsApp" : "Sold Out"}
               </a>
               <a
-                href={product.isAvailable ? "https://shopee.co.id/abyky.of" : undefined}
-                target={product.isAvailable ? "_blank" : undefined}
-                rel={product.isAvailable ? "noopener noreferrer" : undefined}
+                href={hasShopeeLink ? product.shopeeUrl ?? undefined : undefined}
+                target={hasShopeeLink ? "_blank" : undefined}
+                rel={hasShopeeLink ? "noopener noreferrer" : undefined}
                 className={`flex items-center justify-center gap-3 font-sans text-[12px] tracking-[0.2em] uppercase py-4 transition-colors duration-300 ${
-                  product.isAvailable
+                  hasShopeeLink
                     ? "bg-[#EE4D2D] text-white hover:bg-[#d94429]"
                     : "bg-stone-100 text-stone-300 cursor-not-allowed border border-stone-200"
                 }`}
               >
-                {product.isAvailable ? "Beli di Shopee" : "Stok Habis"}
+                {product.isAvailable ? (product.shopeeUrl ? "Beli di Shopee" : "Link Shopee Belum Ada") : "Stok Habis"}
               </a>
             </div>
 

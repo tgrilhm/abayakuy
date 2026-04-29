@@ -59,6 +59,7 @@ model Product {
   kode             String?    @unique
   nama             String?    // Display name
   brand            String?
+  shopeeUrl        String?    // Product-specific Shopee URL
   bahan            Bahan?     // Material / Fabric (enum)
   ukuran           Ukuran[]   // Sizes enum array
   warna            Warna[]    // Colors (enum array)

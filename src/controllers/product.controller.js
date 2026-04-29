@@ -109,11 +109,27 @@ function parseBooleanInput(value, fallback = undefined) {
   return fallback;
 }
 
+function parseOptionalUrl(value) {
+  if (value === undefined) return undefined;
+  if (value === null) return null;
+
+  const trimmed = String(value).trim();
+  if (!trimmed) return null;
+
+  try {
+    const url = new URL(trimmed);
+    if (url.protocol !== 'http:' && url.protocol !== 'https:') return null;
+    return trimmed;
+  } catch {
+    return null;
+  }
+}
+
 // ─── Controllers ─────────────────────────────────────────────────────────────
 
 export const createProduct = async (req, res, next) => {
   try {
-    const { kode, nama, brand, bahan, ukuran, warna, harga, kategori, deskripsi, isAvailable } = req.body;
+    const { kode, nama, brand, shopeeUrl, bahan, ukuran, warna, harga, kategori, deskripsi, isAvailable } = req.body;
 
     if (!kode || !brand || !bahan || !ukuran || !warna || !harga) {
       return res.status(400).json({
@@ -122,6 +138,10 @@ export const createProduct = async (req, res, next) => {
     }
 
     const parsedUkuran = parseUkuranInput(ukuran);
+    const parsedShopeeUrl = parseOptionalUrl(shopeeUrl);
+    if (shopeeUrl !== undefined && parsedShopeeUrl === null && String(shopeeUrl).trim() !== '') {
+      return res.status(400).json({ error: 'Invalid Shopee URL. Please use a full http:// or https:// link.' });
+    }
     const mediaResults = await uploadFiles(req.files);
 
     const product = await prisma.product.create({
@@ -129,6 +149,7 @@ export const createProduct = async (req, res, next) => {
         kode,
         nama: nama || null,
         brand,
+        shopeeUrl: parsedShopeeUrl ?? null,
         bahan: toBahanEnum(bahan),
         ukuran: parsedUkuran,
         warna: parseWarnaInput(warna),
@@ -232,7 +253,7 @@ export const getProductById = async (req, res, next) => {
 export const updateProduct = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const { kode, nama, brand, bahan, ukuran, warna, harga, kategori, deskripsi, deletedMedia, isAvailable } = req.body;
+    const { kode, nama, brand, shopeeUrl, bahan, ukuran, warna, harga, kategori, deskripsi, deletedMedia, isAvailable } = req.body;
 
     const existingProduct = await prisma.product.findUnique({
       where: { id },
@@ -258,6 +279,10 @@ export const updateProduct = async (req, res, next) => {
     }
 
     const mediaResults = await uploadFiles(req.files);
+    const parsedShopeeUrl = parseOptionalUrl(shopeeUrl);
+    if (shopeeUrl !== undefined && parsedShopeeUrl === null && String(shopeeUrl).trim() !== '') {
+      return res.status(400).json({ error: 'Invalid Shopee URL. Please use a full http:// or https:// link.' });
+    }
     const currentMaxOrder =
       existingProduct.media.length > 0
         ? Math.max(...existingProduct.media.map((m) => m.order))
@@ -269,6 +294,7 @@ export const updateProduct = async (req, res, next) => {
         kode:      kode      !== undefined ? kode                    : existingProduct.kode,
         nama:      nama      !== undefined ? nama || null            : existingProduct.nama,
         brand:     brand     !== undefined ? brand                   : existingProduct.brand,
+        shopeeUrl: shopeeUrl !== undefined ? (parsedShopeeUrl ?? null) : existingProduct.shopeeUrl,
         bahan:     bahan     !== undefined ? toBahanEnum(bahan)       : existingProduct.bahan,
         ukuran:    ukuran    !== undefined ? parseUkuranInput(ukuran): existingProduct.ukuran,
         warna:     warna     !== undefined ? parseWarnaInput(warna)  : existingProduct.warna,

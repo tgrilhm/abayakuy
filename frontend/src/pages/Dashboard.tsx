@@ -9,6 +9,7 @@ const normalizeProduct = (product: Product): Product => ({
   kode: product.kode ?? 'Untitled',
   nama: product.nama ?? null,
   brand: product.brand ?? 'Unknown Brand',
+  shopeeUrl: product.shopeeUrl ?? null,
   bahan: product.bahan ?? null,
   ukuran: Array.isArray(product.ukuran) ? product.ukuran : [],
   warna: Array.isArray(product.warna) ? product.warna : [],

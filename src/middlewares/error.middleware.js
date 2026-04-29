@@ -23,7 +23,7 @@ export const errorHandler = (err, req, res, next) => {
 
   // Multer file count limit
   if (err.code === 'LIMIT_FILE_COUNT') {
-    return res.status(400).json({ error: 'Too many files. Maximum 7 files are allowed.' });
+    return res.status(400).json({ error: 'Too many files. Maximum 10 files are allowed.' });
   }
 
   // CORS error

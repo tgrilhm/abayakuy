@@ -19,6 +19,7 @@ interface ProductFormData {
   kode: string;
   nama: string;
   brand: string;
+  shopeeUrl: string;
   bahan: Bahan | '';
   ukuran: Ukuran[];
   warna: Warna[];
@@ -32,6 +33,7 @@ const emptyForm: ProductFormData = {
   kode: '',
   nama: '',
   brand: '',
+  shopeeUrl: '',
   bahan: '',
   ukuran: [],
   warna: [],
@@ -40,8 +42,6 @@ const emptyForm: ProductFormData = {
   deskripsi: '',
   isAvailable: true,
 };
-
-const MAX_TOTAL_UPLOAD_BYTES = 4 * 1024 * 1024;
 
 // ─── Field component for consistent styling ───
 function Field({
@@ -149,6 +149,7 @@ export const AdminProductList: React.FC<AdminProductListProps> = ({ products, lo
       kode: product.kode || '',
       nama: product.nama || '',
       brand: product.brand || '',
+      shopeeUrl: product.shopeeUrl || '',
       bahan: (product.bahan as Bahan) || '',
       ukuran: (product.ukuran || []) as Ukuran[],
       warna: Array.isArray(product.warna) ? product.warna as Warna[] : (product.warna ? [product.warna as Warna] : []),
@@ -180,16 +181,8 @@ export const AdminProductList: React.FC<AdminProductListProps> = ({ products, lo
       : 0;
     const totalCount = existingCount + newFiles.length + selected.length;
 
-    if (totalCount > 7) {
-      setError(`Max 7 files. You can add ${7 - existingCount - newFiles.length} more.`);
-      e.target.value = '';
-      return;
-    }
-
-    const currentBytes = newFiles.reduce((s, f) => s + f.size, 0);
-    const selectedBytes = selected.reduce((s, f) => s + f.size, 0);
-    if (currentBytes + selectedBytes > MAX_TOTAL_UPLOAD_BYTES) {
-      setError('Total upload exceeds 4 MB limit.');
+    if (totalCount > 10) {
+      setError(`Max 10 files. You can add ${10 - existingCount - newFiles.length} more.`);
       e.target.value = '';
       return;
     }
@@ -209,6 +202,7 @@ export const AdminProductList: React.FC<AdminProductListProps> = ({ products, lo
       fd.append('kode', formData.kode);
       fd.append('nama', formData.nama);
       fd.append('brand', formData.brand);
+      fd.append('shopeeUrl', formData.shopeeUrl);
       fd.append('bahan', formData.bahan);
       fd.append('ukuran', JSON.stringify(formData.ukuran));
       fd.append('warna', JSON.stringify(formData.warna));
@@ -555,6 +549,16 @@ export const AdminProductList: React.FC<AdminProductListProps> = ({ products, lo
                     </Field>
                   </div>
 
+                  <Field label="Shopee Link">
+                    <input
+                      type="url"
+                      placeholder="https://shopee.co.id/..."
+                      value={formData.shopeeUrl}
+                      onChange={set('shopeeUrl')}
+                      className={inputCls}
+                    />
+                  </Field>
+
                   {/* Row: Brand + Bahan */}
                   <div className="grid grid-cols-2 gap-4">
                     <Field label="Brand" required>
@@ -705,7 +709,7 @@ export const AdminProductList: React.FC<AdminProductListProps> = ({ products, lo
                   {/* ─── Media ─── */}
                   <div>
                     <p className="text-[10px] tracking-[0.18em] uppercase font-semibold text-stone-400 font-sans mb-3">
-                      Media <span className="text-stone-300 font-normal normal-case tracking-normal">— max 7 files</span>
+                      Media <span className="text-stone-300 font-normal normal-case tracking-normal">— max 10 files</span>
                     </p>
 
                     {/* Existing media */}

@@ -102,6 +102,7 @@ export interface Product {
   kode: string | null;
   nama: string | null;
   brand: string | null;
+  shopeeUrl: string | null;
   bahan: Bahan | null;
   ukuran: Ukuran[] | null;
   warna: Warna[] | null;

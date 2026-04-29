@@ -3,7 +3,7 @@ import { PaginatedProducts } from './types';
 const API_URL = '/api';
 
 const MAX_VERCEL_UPLOAD_MESSAGE =
-  'Upload too large for Vercel. Please keep the total upload under about 4 MB, or upload fewer/smaller files.';
+  'Upload too large for the hosting platform. The app no longer enforces a file-size cap, but your deployment target may still reject very large uploads.';
 
 const getAuthHeaders = (): Record<string, string> => {
   const token = localStorage.getItem('token');

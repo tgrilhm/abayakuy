@@ -16,10 +16,9 @@ const upload = multer({
   storage,
   fileFilter,
   limits: {
-    fileSize: 50 * 1024 * 1024, // 50MB limit (to accommodate videos)
-    files: 7, // Max 7 files per upload
+    files: 10, // Max 10 files per upload
   },
 });
 
 // Accept multiple files under the field name 'media'
-export const uploadMiddleware = upload.array('media', 7);
+export const uploadMiddleware = upload.array('media', 10);
