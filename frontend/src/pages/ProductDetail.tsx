@@ -92,7 +92,10 @@ export default function ProductDetail() {
                     crossOrigin="anonymous"
                     className="w-full h-full object-cover"
                   >
-                    <source src={selectedMedia.url} type="video/mp4" />
+                    <source
+  src={selectedMedia.url.replace('/uploads/', '/api/products/stream/')}
+  type="video/mp4"
+/>
                     Your browser does not support the video tag.
                   </video>
                 ) : (
