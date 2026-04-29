@@ -1,19 +1,22 @@
 # Gunakan Node.js 20 Alpine yang ringan
 FROM node:20-alpine
 
+# Install library yang dibutuhkan Prisma (openssl & libc6-compat)
+RUN apk add --no-cache openssl libc6-compat
+
 # Set working directory
 WORKDIR /app
 
 # Salin package.json dan package-lock.json
 COPY package*.json ./
 
-# Install dependensi (hanya production untuk efisiensi jika perlu, tapi kita butuh devDeps untuk build prisma)
+# Install dependensi
 RUN npm install
 
-# Salin sisa kode aplikasi (kecuali yang di .dockerignore)
+# Salin sisa kode aplikasi
 COPY . .
 
-# Generate Prisma Client
+# Generate Prisma Client (sekarang akan sukses karena openssl sudah ada)
 RUN npx prisma generate
 
 # Expose port backend
