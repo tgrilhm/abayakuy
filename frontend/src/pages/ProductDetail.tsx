@@ -91,7 +91,7 @@ export default function ProductDetail() {
                     loop
                     className="w-full h-full object-cover"
                   >
-                    <source src={selectedMedia.url} type="video/mp4" />
+                    <source src={`/stream/video/${selectedMedia.url.split('/').pop()}`} type="video/mp4" />
                     Your browser does not support the video tag.
                   </video>
                 ) : (
