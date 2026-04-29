@@ -1,5 +1,5 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import TopNavBar from './components/TopNavBar';
 import Footer from './components/Footer';
 import Home from './pages/Home';
@@ -14,6 +14,7 @@ import HubungiKami from './pages/HubungiKami';
 import ProductDetail from './pages/ProductDetail';
 import AdminLogin from './pages/AdminLogin';
 import Dashboard from './pages/Dashboard';
+import { api } from './api';
 
 // ─── WhatsApp floating button ─────────────────────────────────────────────────
 function WhatsAppFloat() {
@@ -45,6 +46,18 @@ function Placeholder({ title }: { title: string }) {
   return <div className="pt-32 min-h-screen flex items-center justify-center"><h1 className="text-2xl">{title}</h1></div>;
 }
 
+function AdminEntry() {
+  return api.isAuthenticated()
+    ? <Navigate to="/admin/dashboard" replace />
+    : <AdminLogin />;
+}
+
+function ProtectedAdminRoute({ children }: { children: React.ReactElement }) {
+  return api.isAuthenticated()
+    ? children
+    : <Navigate to="/admin" replace />;
+}
+
 export default function App() {
   return (
     <Router>
@@ -62,8 +75,15 @@ export default function App() {
             <Route path="/panduan-ukuran" element={<PanduanUkuran />} />
             <Route path="/hubungi-kami" element={<HubungiKami />} />
             <Route path="/product/:id" element={<ProductDetail />} />
-            <Route path="/admin" element={<AdminLogin />} />
-            <Route path="/admin/dashboard" element={<Dashboard />} />
+            <Route path="/admin" element={<AdminEntry />} />
+            <Route
+              path="/admin/dashboard"
+              element={
+                <ProtectedAdminRoute>
+                  <Dashboard />
+                </ProtectedAdminRoute>
+              }
+            />
           </Routes>
         </div>
         <Footer />
