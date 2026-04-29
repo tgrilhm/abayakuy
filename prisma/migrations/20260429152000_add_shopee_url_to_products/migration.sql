@@ -1,2 +1,2 @@
 ALTER TABLE "products"
-ADD COLUMN "shopeeUrl" TEXT;
+ADD COLUMN "link" TEXT;
