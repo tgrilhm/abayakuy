@@ -55,7 +55,7 @@ export default function ProductDetail() {
   const allMedia = product.media ?? [];
   const images = allMedia.filter((m) => m.type === "image");
   const videos = allMedia.filter((m) => m.type === "video");
-  const hasShopeeLink = product.isAvailable && !!product.shopeeUrl;
+  const hasShopeeLink = product.isAvailable && !!product.link;
 
   const formatPrice = (p: number | null) =>
     p != null ? `Rp ${p.toLocaleString('id-ID')}` : "—";
@@ -267,7 +267,7 @@ export default function ProductDetail() {
                 {product.isAvailable ? "Pesan via WhatsApp" : "Sold Out"}
               </a>
               <a
-                href={hasShopeeLink ? product.shopeeUrl ?? undefined : undefined}
+                href={hasShopeeLink ? product.link ?? undefined : undefined}
                 target={hasShopeeLink ? "_blank" : undefined}
                 rel={hasShopeeLink ? "noopener noreferrer" : undefined}
                 className={`flex items-center justify-center gap-3 font-sans text-[12px] tracking-[0.2em] uppercase py-4 transition-colors duration-300 ${
@@ -276,7 +276,7 @@ export default function ProductDetail() {
                     : "bg-stone-100 text-stone-300 cursor-not-allowed border border-stone-200"
                 }`}
               >
-                {product.isAvailable ? (product.shopeeUrl ? "Beli di Shopee" : "Link Shopee Belum Ada") : "Stok Habis"}
+                {product.isAvailable ? (product.link ? "Beli di Shopee" : "Link Shopee Belum Ada") : "Stok Habis"}
               </a>
             </div>
 

@@ -19,7 +19,7 @@ interface ProductFormData {
   kode: string;
   nama: string;
   brand: string;
-  shopeeUrl: string;
+  link: string;
   bahan: Bahan | '';
   ukuran: Ukuran[];
   warna: Warna[];
@@ -33,7 +33,7 @@ const emptyForm: ProductFormData = {
   kode: '',
   nama: '',
   brand: '',
-  shopeeUrl: '',
+  link: '',
   bahan: '',
   ukuran: [],
   warna: [],
@@ -149,7 +149,7 @@ export const AdminProductList: React.FC<AdminProductListProps> = ({ products, lo
       kode: product.kode || '',
       nama: product.nama || '',
       brand: product.brand || '',
-      shopeeUrl: product.shopeeUrl || '',
+      link: product.link || '',
       bahan: (product.bahan as Bahan) || '',
       ukuran: (product.ukuran || []) as Ukuran[],
       warna: Array.isArray(product.warna) ? product.warna as Warna[] : (product.warna ? [product.warna as Warna] : []),
@@ -202,7 +202,7 @@ export const AdminProductList: React.FC<AdminProductListProps> = ({ products, lo
       fd.append('kode', formData.kode);
       fd.append('nama', formData.nama);
       fd.append('brand', formData.brand);
-      fd.append('shopeeUrl', formData.shopeeUrl);
+      fd.append('link', formData.link);
       fd.append('bahan', formData.bahan);
       fd.append('ukuran', JSON.stringify(formData.ukuran));
       fd.append('warna', JSON.stringify(formData.warna));
@@ -553,8 +553,8 @@ export const AdminProductList: React.FC<AdminProductListProps> = ({ products, lo
                     <input
                       type="text"
                       placeholder="https://shopee.co.id/..."
-                      value={formData.shopeeUrl}
-                      onChange={set('shopeeUrl')}
+                      value={formData.link}
+                      onChange={set('link')}
                       className={inputCls}
                       autoCapitalize="off"
                       autoCorrect="off"
