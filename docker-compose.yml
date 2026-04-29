@@ -1,15 +1,32 @@
 version: '3.8'
 
 services:
+  # --- Database (Local PostgreSQL) ---
+  db:
+    image: postgres:15-alpine
+    container_name: abaya-db
+    restart: always
+    environment:
+      POSTGRES_USER: abaya_user
+      POSTGRES_PASSWORD: abaya_password
+      POSTGRES_DB: abaya_db
+    volumes:
+      - ./postgres_data:/var/lib/postgresql/data
+    networks:
+      - abaya-network
+
   # --- Backend Service ---
   backend:
     build: .
     container_name: abaya-backend
     restart: always
     env_file: .env
+    depends_on:
+      - db
     ports:
       - "3000:3000"
-    # Menunggu database jika perlu (tapi jika menggunakan Supabase, ini tidak wajib)
+    volumes:
+      - ./uploads:/app/uploads # Persist gambar di VPS
     networks:
       - abaya-network
 

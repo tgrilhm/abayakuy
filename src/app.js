@@ -45,6 +45,9 @@ app.use(
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// ─── Serve Static Uploads ───
+app.use('/uploads', express.static('uploads'));
+
 // ─── Request logger (helps debug Vercel function logs) ───
 app.use((req, _res, next) => {
   console.log(`[${new Date().toISOString()}] ${req.method} ${req.path}`);
