@@ -89,13 +89,10 @@ export default function ProductDetail() {
                     muted
                     autoPlay
                     loop
-                    crossOrigin="anonymous"
-                    className="w-full h-full object-cover"
+                    onLoadedData={() => setImgLoaded(true)}
+                    className={`w-full h-full object-cover transition-opacity duration-500 ${imgLoaded ? "opacity-100" : "opacity-0"}`}
                   >
-                    <source
-  src={selectedMedia.url.replace('/uploads/', '/api/products/stream/')}
-  type="video/mp4"
-/>
+                    <source src={selectedMedia.url} type="video/mp4" />
                     Your browser does not support the video tag.
                   </video>
                 ) : (
