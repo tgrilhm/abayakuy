@@ -1,6 +1,7 @@
 import path from 'path';
 import fs from 'fs/promises';
 import sharp from 'sharp';
+import ffmpeg from 'fluent-ffmpeg';
 
 const UPLOAD_DIR = path.join(process.cwd(), 'uploads');
 
@@ -16,6 +17,7 @@ async function ensureDir() {
 /**
  * Convert a stored upload into the app's public media shape.
  * If it's an image, convert it to WebP and optimize.
+ * If it's a video, compress it using ffmpeg.
  * @param {object} file - Multer file object
  * @returns {{ url: string, type: string }} - Public URL path and file type
  */
@@ -35,33 +37,48 @@ export const uploadFile = async (file) => {
     const webpPath = path.join(UPLOAD_DIR, webpName);
 
     try {
-      // Convert to WebP with sharp
       await sharp(filePath)
         .webp({ quality: 80 })
         .toFile(webpPath);
-
-      // Delete the original (non-webp) file to save space
       await fs.unlink(filePath);
-
-      return {
-        url: `/uploads/${webpName}`,
-        type: 'image',
-      };
+      return { url: `/uploads/${webpName}`, type: 'image' };
     } catch (error) {
-      console.error('Image optimization failed, falling back to original:', error.message);
-      // If optimization fails, fall back to the original file
-      return {
-        url: `/uploads/${fileName}`,
-        type: 'image',
-      };
+      console.error('Image optimization failed:', error.message);
+      return { url: `/uploads/${fileName}`, type: 'image' };
     }
   }
 
-  // Videos are returned as-is
-  return {
-    url: `/uploads/${fileName}`,
-    type,
-  };
+  if (type === 'video') {
+    const mp4Name = `${path.parse(fileName).name}-optimized.mp4`;
+    const mp4Path = path.join(UPLOAD_DIR, mp4Name);
+
+    return new Promise((resolve) => {
+      ffmpeg(filePath)
+        .outputOptions([
+          '-c:v libx264',    // Video codec: H.264
+          '-crf 28',         // Constant Rate Factor (23 is default, 28 is smaller/lower quality)
+          '-preset faster',   // Encoding speed
+          '-c:a aac',        // Audio codec: AAC
+          '-b:a 128k',       // Audio bitrate
+          '-movflags +faststart' // Enable fast start for web streaming
+        ])
+        .save(mp4Path)
+        .on('end', async () => {
+          try {
+            await fs.unlink(filePath); // Delete original large video
+            resolve({ url: `/uploads/${mp4Name}`, type: 'video' });
+          } catch (err) {
+            resolve({ url: `/uploads/${fileName}`, type: 'video' });
+          }
+        })
+        .on('error', (err) => {
+          console.error('Video optimization failed:', err.message);
+          resolve({ url: `/uploads/${fileName}`, type: 'video' });
+        });
+    });
+  }
+
+  return { url: `/uploads/${fileName}`, type };
 };
 
 /**
