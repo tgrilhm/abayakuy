@@ -132,6 +132,7 @@ function parseOptionalUrl(value) {
 export const createProduct = async (req, res, next) => {
   try {
     const { kode, nama, brand, shopeeUrl, link, bahan, ukuran, warna, harga, kategori, deskripsi, isAvailable } = req.body;
+    const requestStartedAt = Date.now();
 
     if (!kode || !brand || !bahan || !ukuran || !warna || !harga) {
       return res.status(400).json({
@@ -177,6 +178,15 @@ export const createProduct = async (req, res, next) => {
       const mediaRecord = product.media.find(rm => rm.url === m.url);
       if (mediaRecord) {
         const jobName = m.type === 'video' ? 'optimize-video' : 'optimize-image';
+        console.log('[PRODUCT CREATE]: Enqueuing media job', {
+          productId: product.id,
+          mediaId: mediaRecord.id,
+          jobName,
+          fileName: m.fileName,
+          originalName: m.originalName,
+          sizeBytes: m.size,
+          mimetype: m.mimetype,
+        });
         await videoQueue.add(jobName, {
           rawFilePath: m.path,
           mediaId: mediaRecord.id
@@ -186,6 +196,13 @@ export const createProduct = async (req, res, next) => {
 
     // Invalidate product caches
     await invalidateCache('products:*');
+
+    console.log('[PRODUCT CREATE]: Product created with queued media', {
+      productId: product.id,
+      mediaCount: mediaResults.length,
+      videoCount: mediaResults.filter((media) => media.type === 'video').length,
+      durationMs: Date.now() - requestStartedAt,
+    });
 
     res.status(201).json(product);
   } catch (error) {
@@ -286,6 +303,7 @@ export const updateProduct = async (req, res, next) => {
   try {
     const { id } = req.params;
     const { kode, nama, brand, shopeeUrl, link, bahan, ukuran, warna, harga, kategori, deskripsi, deletedMedia, isAvailable } = req.body;
+    const requestStartedAt = Date.now();
 
     const existingProduct = await prisma.product.findUnique({
       where: { id },
@@ -352,6 +370,15 @@ export const updateProduct = async (req, res, next) => {
       const mediaRecord = updatedProduct.media.find(rm => rm.url === m.url);
       if (mediaRecord) {
         const jobName = m.type === 'video' ? 'optimize-video' : 'optimize-image';
+        console.log('[PRODUCT UPDATE]: Enqueuing media job', {
+          productId: updatedProduct.id,
+          mediaId: mediaRecord.id,
+          jobName,
+          fileName: m.fileName,
+          originalName: m.originalName,
+          sizeBytes: m.size,
+          mimetype: m.mimetype,
+        });
         await videoQueue.add(jobName, {
           rawFilePath: m.path,
           mediaId: mediaRecord.id
@@ -361,6 +388,13 @@ export const updateProduct = async (req, res, next) => {
 
     // Invalidate product caches in background
     invalidateCache('products:*').catch(err => console.error('[CACHE ERROR]:', err));
+
+    console.log('[PRODUCT UPDATE]: Product updated with queued media', {
+      productId: updatedProduct.id,
+      mediaCount: mediaResults.length,
+      videoCount: mediaResults.filter((media) => media.type === 'video').length,
+      durationMs: Date.now() - requestStartedAt,
+    });
 
     res.status(200).json(updatedProduct);
   } catch (error) {

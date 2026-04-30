@@ -26,14 +26,20 @@ const normalizeProduct = (product: Product): Product => ({
 export default function Dashboard() {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
+  const [processingCount, setProcessingCount] = useState(0);
   const navigate = useNavigate();
 
   const fetchProducts = useCallback(async () => {
     try {
       setLoading(true);
       const result = await api.getProducts({ limit: 100 });
-      setProducts(
-        (result.data ?? []).map(normalizeProduct)
+      const normalizedProducts = (result.data ?? []).map(normalizeProduct);
+      setProducts(normalizedProducts);
+      setProcessingCount(
+        normalizedProducts.reduce(
+          (count, product) => count + (product.media?.filter((media) => media.status === 'processing').length ?? 0),
+          0
+        )
       );
     } catch (err) {
       console.error('Failed to fetch products:', err);
@@ -53,6 +59,16 @@ export default function Dashboard() {
     fetchProducts();
   }, [fetchProducts, navigate]);
 
+  useEffect(() => {
+    if (processingCount === 0) return;
+
+    const interval = setInterval(() => {
+      fetchProducts();
+    }, 3000);
+
+    return () => clearInterval(interval);
+  }, [fetchProducts, processingCount]);
+
   const handleLogout = () => {
     api.logout();
     navigate("/admin");
@@ -61,7 +77,14 @@ export default function Dashboard() {
   return (
     <div className="pt-24 min-h-screen bg-surface flex flex-col">
       <div className="bg-surface-lowest border-b border-surface-high p-4 flex justify-between items-center">
-        <h1 className="font-headline-md text-headline-md text-on-background">Admin Dashboard</h1>
+        <div>
+          <h1 className="font-headline-md text-headline-md text-on-background">Admin Dashboard</h1>
+          {processingCount > 0 && (
+            <p className="mt-1 font-sans text-[11px] tracking-[0.08em] uppercase text-amber-700">
+              {processingCount} media file{processingCount > 1 ? 's are' : ' is'} still processing
+            </p>
+          )}
+        </div>
         <button 
           onClick={handleLogout}
           className="bg-error text-on-error px-4 py-2 text-sm uppercase tracking-widest hover:opacity-80 transition-opacity"

@@ -1,7 +1,5 @@
 import path from 'path';
 import fs from 'fs/promises';
-import sharp from 'sharp';
-import ffmpeg from 'fluent-ffmpeg';
 
 const UPLOAD_DIR = path.join(process.cwd(), 'uploads');
 
@@ -37,7 +35,11 @@ export const uploadFile = async (file) => {
     url: `/uploads/${fileName}`,
     type,
     status: 'processing',
-    path: filePath
+    path: filePath,
+    fileName,
+    originalName: file.originalname,
+    size: file.size ?? null,
+    mimetype: file.mimetype ?? null,
   };
 };
 

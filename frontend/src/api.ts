@@ -2,8 +2,8 @@ import { PaginatedProducts } from './types';
 
 const API_URL = '/api';
 
-const MAX_VERCEL_UPLOAD_MESSAGE =
-  'Upload too large for the hosting platform. The app no longer enforces a file-size cap, but your deployment target may still reject very large uploads.';
+const MAX_UPLOAD_MESSAGE =
+  'Upload too large for the server. The app allows large files, but your VPS, reverse proxy, or container limits may still reject very large uploads.';
 
 const getAuthHeaders = (): Record<string, string> => {
   const token = localStorage.getItem('token');
@@ -29,7 +29,7 @@ const parseResponse = async (res: Response) => {
       text.includes('Request Entity Too Large') ||
       text.includes('FUNCTION_PAYLOAD_TOO_LARGE')
     ) {
-      throw new Error(MAX_VERCEL_UPLOAD_MESSAGE);
+      throw new Error(MAX_UPLOAD_MESSAGE);
     }
     throw new Error(text || `Request failed with status ${res.status}`);
   }

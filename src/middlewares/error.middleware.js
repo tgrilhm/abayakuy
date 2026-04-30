@@ -1,5 +1,5 @@
 export const errorHandler = (err, req, res, next) => {
-  // Always log the full error — visible in Vercel function logs
+  // Always log the full error so production failures are diagnosable.
   console.error(`[ERROR] ${req.method} ${req.path}`, {
     message: err.message,
     code: err.code,

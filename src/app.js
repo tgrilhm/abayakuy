@@ -15,7 +15,7 @@ const REQUIRED_ENV = ['JWT_SECRET', 'ADMIN_USER', 'ADMIN_PASS'];
 const missingEnv = REQUIRED_ENV.filter((key) => !process.env[key]);
 if (missingEnv.length > 0) {
   console.error(`[STARTUP ERROR] Missing required environment variables: ${missingEnv.join(', ')}`);
-  console.error('Set these in your Vercel project → Settings → Environment Variables, then redeploy.');
+  console.error('Set these in your server environment or .env file, then restart the backend.');
 }
 
 const app = express();
@@ -81,13 +81,11 @@ app.use(errorHandler);
 
 const PORT = process.env.PORT || 3000;
 
-if (process.env.NODE_ENV !== 'production' || !process.env.VERCEL) {
-  app.listen(PORT, () => {
-    console.log(`Server is running on port ${PORT}`);
-    if (missingEnv.length > 0) {
-      console.warn(`WARNING: Missing env vars: ${missingEnv.join(', ')}`);
-    }
-  });
-}
+app.listen(PORT, () => {
+  console.log(`Server is running on port ${PORT}`);
+  if (missingEnv.length > 0) {
+    console.warn(`WARNING: Missing env vars: ${missingEnv.join(', ')}`);
+  }
+});
 
 export default app;

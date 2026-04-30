@@ -4,32 +4,36 @@ A production-ready web application for managing an abaya product catalog.
 
 ## Features
 - **Backend**: Node.js, Express.js with ES Modules
-- **Database**: PostgreSQL (via Supabase) with Prisma ORM
+- **Database**: PostgreSQL with Prisma ORM
+- **Media Storage**: local `uploads/` directory persisted on the VPS
+- **Media Processing**: BullMQ + Redis background jobs with `ffmpeg` and `sharp`
 - **Authentication**: JWT-based login with admin credentials from environment variables
-- **Image Storage**: Supabase Storage
 - **Frontend**: React + Vite admin interface
-- **Deployment**: Vercel-friendly split between static frontend and `/api` serverless backend
+- **Deployment**: Docker-based VPS deployment with frontend and backend containers
 
 ## Setup Instructions
 
 ### 1. Prerequisites
 - Node.js (v16 or higher)
-- A [Supabase](https://supabase.com/) account and project
+- PostgreSQL
+- Redis
+- `ffmpeg`
 
 ### 2. Environment Variables
 1. Copy `.env.example` to `.env`.
 2. Fill in the values:
-   - `DATABASE_URL`: Supabase pooled connection string
-   - `DIRECT_URL`: Supabase direct connection string
-   - `SUPABASE_URL`: Supabase project URL
-   - `SUPABASE_KEY`: Supabase `service_role` key for server-side storage uploads
+   - `DATABASE_URL`: PostgreSQL connection string
+   - `REDIS_URL`: Redis connection string for BullMQ
    - `ADMIN_USER` and `ADMIN_PASS`: admin login credentials
    - `JWT_SECRET`: secure random string for JWT signing
+   - `VIDEO_WORKER_CONCURRENCY`: optional queue worker concurrency, default `1` for small VPS instances
 
-### 3. Supabase Setup
-1. In Supabase Storage, create a bucket named `products`.
-2. Make the bucket public if media should be viewable in the frontend.
-3. Keep the `service_role` key only in server environment variables.
+### 3. Storage And Processing
+1. The app writes uploaded images and videos to `uploads/`.
+2. Mount that directory to persistent storage in production.
+3. Images are converted to `.webp` in the background.
+4. Videos are transcoded to H.264 MP4 in the background.
+5. Check `GET /api/health` to verify Redis, queue counts, and upload directory access.
 
 ### 4. Install and Initialize
 ```bash
@@ -57,22 +61,20 @@ Local URLs:
 ### 6. Project Structure
 - `frontend/`: React + Vite frontend
 - `src/`: Express API source
-- `api/index.js`: Vercel serverless entrypoint
+- `uploads/`: persisted media files in VPS/Docker deployments
 - `prisma/`: Prisma schema
 - `public/`: legacy static frontend retained for reference
 
-### 7. Deploying to Vercel
-1. Push the repository to GitHub.
-2. Import the project into Vercel.
-3. Use build command: `npm install && npm run build`
-4. Use output directory: `frontend/dist`
-5. Add the production environment variables from `.env`.
-6. Deploy.
+### 7. Deploying To A VPS
+1. Build and run the containers with `docker-compose up -d --build`.
+2. Make sure `./uploads` is mounted to `/app/uploads` for persistence.
+3. Keep Redis reachable from the backend container.
+4. Start with `VIDEO_WORKER_CONCURRENCY=1` on small VPS instances.
+5. Verify `https://your-domain/api/health` after deployment.
 
 ### 8. Production Checklist
-- Set `DATABASE_URL` to the Supabase pooled connection string.
-- Set `DIRECT_URL` to the Supabase direct connection string.
-- Set `SUPABASE_KEY` to the Supabase `service_role` key.
+- Set `DATABASE_URL` and `REDIS_URL`.
 - Set strong values for `JWT_SECRET`, `ADMIN_USER`, and `ADMIN_PASS`.
 - Run `npx prisma db push` against production if the tables do not exist yet.
-- Verify `https://your-domain/api/health` after deployment.
+- Verify `https://your-domain/api/health` shows Redis connected and queue details.
+- Monitor backend logs for `[QUEUE-WORKER]` entries during video uploads.
