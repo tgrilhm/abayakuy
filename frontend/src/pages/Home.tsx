@@ -195,7 +195,7 @@ export default function Home() {
                 price={`${product.harga ?? 0}`}
                 isAvailable={product.isAvailable}
                 showAvailabilityText
-                imageSrc={product.media && product.media.length > 0 ? product.media[0].url : "https://via.placeholder.com/400x500"}
+                imageSrc={product.media?.find(m => m.type === 'image')?.url || product.media?.[0]?.url || "https://via.placeholder.com/400x500"}
               />
             ))
           ) : (
@@ -242,7 +242,7 @@ export default function Home() {
                 aspectRatio="2/3" isSmall
                 isAvailable={product.isAvailable}
                 showAvailabilityText
-                imageSrc={product.media && product.media.length > 0 ? product.media[0].url : "https://via.placeholder.com/300x450"}
+                imageSrc={product.media?.find(m => m.type === 'image')?.url || product.media?.[0]?.url || "https://via.placeholder.com/300x450"}
               />
             ))
           ) : (

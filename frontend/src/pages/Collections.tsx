@@ -167,9 +167,9 @@ export default function Collections() {
                 isSmall={true}
                 isAvailable={product.isAvailable}
                 imageSrc={
-                  product.media && product.media.length > 0
-                    ? product.media[0].url
-                    : "https://via.placeholder.com/300x450"
+                  product.media?.find(m => m.type === 'image')?.url || 
+                  product.media?.[0]?.url || 
+                  "https://via.placeholder.com/300x450"
                 }
               />
             ))
