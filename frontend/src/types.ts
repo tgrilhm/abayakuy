@@ -2,6 +2,7 @@ export interface Media {
   id: string;
   url: string;
   type: 'image' | 'video';
+  status: 'ready' | 'processing' | 'failed';
   order: number;
 }
 

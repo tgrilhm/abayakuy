@@ -15,46 +15,11 @@ async function ensureDir() {
 }
 
 /**
- * Background worker to optimize video without blocking the user.
- */
-const optimizeVideoInBackground = async (originalPath, optimizedPath) => {
-  console.log(`[BG-FFMPEG]: Starting background optimization for ${path.basename(originalPath)}`);
-  
-  ffmpeg(originalPath)
-    .outputOptions([
-      '-c:v libx264',
-      '-profile:v main',
-      '-level 3.1',
-      '-pix_fmt yuv420p',
-      '-crf 28',
-      '-preset fast',
-      '-vf scale=trunc(iw/2)*2:trunc(ih/2)*2',
-      '-c:a aac',
-      '-b:a 128k',
-      '-movflags +faststart'
-    ])
-    .toFormat('mp4')
-    .on('error', (err) => {
-      console.error(`[BG-FFMPEG ERROR]: Optimization failed for ${path.basename(originalPath)}:`, err.message);
-    })
-    .on('end', async () => {
-      try {
-        // Replace original with optimized version
-        await fs.rename(optimizedPath, originalPath);
-        console.log(`[BG-FFMPEG]: Successfully replaced original with optimized version: ${path.basename(originalPath)}`);
-      } catch (err) {
-        console.error(`[BG-FFMPEG ERROR]: Failed to swap files:`, err.message);
-      }
-    })
-    .save(optimizedPath);
-};
-
-/**
  * Convert a stored upload into the app's public media shape.
  * Images are processed immediately (fast).
- * Videos are saved immediately, but optimized in the background (instant response).
+ * Videos are saved immediately and returned with 'processing' status if needed.
  * @param {object} file - Multer file object
- * @returns {{ url: string, type: string }} - Public URL path and file type
+ * @returns {{ url: string, type: string, status: string, path: string }}
  */
 export const uploadFile = async (file) => {
   await ensureDir();
@@ -75,29 +40,24 @@ export const uploadFile = async (file) => {
     try {
       await sharp(filePath).webp({ quality: 80 }).toFile(webpPath);
       await fs.unlink(filePath);
-      return { url: `/uploads/${webpName}`, type: 'image' };
+      return { url: `/uploads/${webpName}`, type: 'image', status: 'ready', path: webpPath };
     } catch (error) {
       console.error('Image optimization failed:', error.message);
-      return { url: `/uploads/${fileName}`, type: 'image' };
+      return { url: `/uploads/${fileName}`, type: 'image', status: 'ready', path: filePath };
     }
   }
 
-  // --- Video Handling (Instant response, background processing) ---
+  // --- Video Handling ---
   if (type === 'video') {
-    // We return the original URL immediately
-    const publicUrl = `/uploads/${fileName}`;
-    const tempOptimizedPath = path.join(UPLOAD_DIR, `optimizing-${fileName}`);
-
-    // Trigger the background worker WITHOUT 'await'
-    optimizeVideoInBackground(filePath, tempOptimizedPath);
-
     return {
-      url: publicUrl,
+      url: `/uploads/${fileName}`,
       type: 'video',
+      status: 'processing',
+      path: filePath
     };
   }
 
-  return { url: `/uploads/${fileName}`, type };
+  return { url: `/uploads/${fileName}`, type, status: 'ready', path: filePath };
 };
 
 /**

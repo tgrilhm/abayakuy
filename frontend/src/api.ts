@@ -123,6 +123,13 @@ export const api = {
     return parseResponse(res);
   },
 
+  getMediaStatus: async (id: string) => {
+    const res = await fetch(`${API_URL}/products/${id}/media-status`, {
+      headers: getAuthHeaders(),
+    });
+    return parseResponse(res);
+  },
+
   isAuthenticated: () => {
     return !!localStorage.getItem('token');
   },

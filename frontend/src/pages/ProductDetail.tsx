@@ -40,6 +40,31 @@ export default function ProductDetail() {
       .finally(() => setLoading(false));
   }, [id]);
 
+  useEffect(() => {
+    if (!id || !product) return;
+
+    const needsPolling = product.media?.some(m => m.status === 'processing');
+    if (!needsPolling) return;
+
+    const interval = setInterval(async () => {
+      try {
+        const mediaStatus = await api.getMediaStatus(id);
+        const anyStillProcessing = mediaStatus.some((m: Media) => m.status === 'processing');
+        
+        if (!anyStillProcessing) {
+          // Refresh product to get updated media
+          const updatedProduct = await api.getProductById(id);
+          setProduct(updatedProduct);
+          clearInterval(interval);
+        }
+      } catch (err) {
+        console.error("Polling failed:", err);
+      }
+    }, 3000);
+
+    return () => clearInterval(interval);
+  }, [id, product]);
+
   if (loading) return <SkeletonDetail />;
   if (notFound || !product) {
     return (
@@ -82,19 +107,31 @@ export default function ProductDetail() {
               {!imgLoaded && <div className="absolute inset-0 skeleton" />}
               {selectedMedia ? (
                 selectedMedia.type === "video" ? (
-                  <video
-                    key={selectedMedia.url}
-                    controls
-                    playsInline
-                    muted
-                    autoPlay
-                    loop
-                    onLoadedData={() => setImgLoaded(true)}
-                    className={`w-full h-full object-cover transition-opacity duration-500 ${imgLoaded ? "opacity-100" : "opacity-0"}`}
-                  >
-                    <source src={selectedMedia.url} type="video/mp4" />
-                    Your browser does not support the video tag.
-                  </video>
+                  selectedMedia.status === 'processing' ? (
+                    <div className="w-full h-full flex flex-col items-center justify-center gap-4 bg-stone-100 text-stone-500 font-sans">
+                      <div className="w-8 h-8 border-2 border-stone-300 border-t-stone-800 rounded-full animate-spin" />
+                      <p className="text-[10px] tracking-widest uppercase">Video is processing...</p>
+                    </div>
+                  ) : selectedMedia.status === 'failed' ? (
+                    <div className="w-full h-full flex flex-col items-center justify-center gap-4 bg-stone-100 text-red-500 font-sans">
+                      <span className="material-symbols-outlined text-4xl">error</span>
+                      <p className="text-[10px] tracking-widest uppercase">Processing failed</p>
+                    </div>
+                  ) : (
+                    <video
+                      key={selectedMedia.url}
+                      controls
+                      playsInline
+                      muted
+                      autoPlay
+                      loop
+                      onLoadedData={() => setImgLoaded(true)}
+                      className={`w-full h-full object-cover transition-opacity duration-500 ${imgLoaded ? "opacity-100" : "opacity-0"}`}
+                    >
+                      <source src={selectedMedia.url} type="video/mp4" />
+                      Your browser does not support the video tag.
+                    </video>
+                  )
                 ) : (
                   <img
                     key={selectedMedia.url}
@@ -131,10 +168,22 @@ export default function ProductDetail() {
                   >
                     {media.type === "video" ? (
                       <>
-                        <video src={media.url} className="w-full h-full object-cover opacity-80" />
-                        <div className="absolute inset-0 flex items-center justify-center">
-                          <span className="material-symbols-outlined text-white text-[18px] drop-shadow">play_circle</span>
-                        </div>
+                        {media.status === 'processing' ? (
+                          <div className="w-full h-full flex items-center justify-center bg-stone-50">
+                             <div className="w-4 h-4 border border-stone-300 border-t-stone-800 rounded-full animate-spin" />
+                          </div>
+                        ) : media.status === 'failed' ? (
+                          <div className="w-full h-full flex items-center justify-center bg-stone-50 text-red-400">
+                             <span className="material-symbols-outlined text-[16px]">error</span>
+                          </div>
+                        ) : (
+                          <>
+                            <video src={media.url} className="w-full h-full object-cover opacity-80" />
+                            <div className="absolute inset-0 flex items-center justify-center">
+                              <span className="material-symbols-outlined text-white text-[18px] drop-shadow">play_circle</span>
+                            </div>
+                          </>
+                        )}
                       </>
                     ) : (
                       <img src={media.url} alt="" className="w-full h-full object-cover" />

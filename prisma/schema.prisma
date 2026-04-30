@@ -88,6 +88,7 @@ model Media {
   id         String   @id @default(uuid()) @db.Uuid
   url        String   // Public URL from Supabase Storage
   type       String   // "image" or "video"
+  status     String   @default("ready") // "ready" | "processing" | "failed"
   order      Int      @default(0)
   product_id String   @db.Uuid
   product    Product  @relation(fields: [product_id], references: [id], onDelete: Cascade)

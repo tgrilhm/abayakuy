@@ -54,6 +54,7 @@ router.get('/stream/:filename', (req, res) => {
 router.get('/hero', getHeroProduct);       // must be before /:id
 router.get('/', getProducts);
 router.get('/:id', getProductById);
+router.get('/:id/media-status', getMediaStatus);
 
 // Protected routes — admin only
 router.post('/', requireAuth, uploadMiddleware, createProduct);

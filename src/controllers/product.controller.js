@@ -1,6 +1,7 @@
 import prisma from '../config/prisma.js';
 import { uploadFiles, deleteFile } from '../services/upload.service.js';
 import { getOrCache, invalidateCache } from '../config/redis.js';
+import { videoQueue } from '../services/videoQueue.js';
 
 // ─── Enum mappings ───────────────────────────────────────────────────────────
 // Maps the display string sent from the frontend to the Prisma enum key.
@@ -163,12 +164,26 @@ export const createProduct = async (req, res, next) => {
           create: mediaResults.map((m, index) => ({
             url: m.url,
             type: m.type,
+            status: m.status,
             order: index,
           })),
         },
       },
       include: { media: { orderBy: { order: 'asc' } } },
     });
+
+    // Queue video processing jobs
+    for (const m of mediaResults) {
+      if (m.type === 'video') {
+        const mediaRecord = product.media.find(rm => rm.url === m.url);
+        if (mediaRecord) {
+          await videoQueue.add('optimize-video', {
+            rawFilePath: m.path,
+            mediaId: mediaRecord.id
+          });
+        }
+      }
+    }
 
     // Invalidate product caches
     await invalidateCache('products:*');
@@ -325,12 +340,26 @@ export const updateProduct = async (req, res, next) => {
           create: mediaResults.map((m, index) => ({
             url: m.url,
             type: m.type,
+            status: m.status,
             order: currentMaxOrder + 1 + index,
           })),
         },
       },
       include: { media: { orderBy: { order: 'asc' } } },
     });
+
+    // Queue video processing jobs for new media
+    for (const m of mediaResults) {
+      if (m.type === 'video') {
+        const mediaRecord = updatedProduct.media.find(rm => rm.url === m.url);
+        if (mediaRecord) {
+          await videoQueue.add('optimize-video', {
+            rawFilePath: m.path,
+            mediaId: mediaRecord.id
+          });
+        }
+      }
+    }
 
     // Invalidate product caches
     await invalidateCache('products:*');
@@ -399,6 +428,20 @@ export const updateProductPages = async (req, res, next) => {
     await invalidateCache('products:*');
 
     res.status(200).json(updated);
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getMediaStatus = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const media = await prisma.media.findMany({
+      where: { product_id: id },
+      select: { id: true, url: true, status: true, type: true },
+      orderBy: { order: 'asc' }
+    });
+    res.status(200).json(media);
   } catch (error) {
     next(error);
   }
