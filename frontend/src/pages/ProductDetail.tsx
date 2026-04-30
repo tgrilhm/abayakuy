@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import { api } from "../api";
+import SEO from "../components/SEO";
 import { Product, Media, formatUkuranDisplay } from "../types";
 
 function getVideoMimeType(url: string) {
@@ -94,6 +95,10 @@ export default function ProductDetail() {
 
   return (
     <main className="pt-28 min-h-screen bg-[#faf8f6]">
+      <SEO 
+        title={product.nama || product.kode || "Produk"} 
+        description={`${product.nama || product.kode}. Brand: ${product.brand || '-'}. Bahan: ${product.bahan || '-'}. Kategori: ${product.kategori || '-'}. Temukan koleksi abaya Mesir original terbaik hanya di ABAYAKUY.`}
+      />
       <div className="max-w-[1280px] mx-auto px-6 md:px-8 py-10">
 
         {/* Breadcrumb */}

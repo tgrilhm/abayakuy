@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import ProductCard from "../components/ProductCard";
+import SEO from "../components/SEO";
 import { api } from "../api";
 import { Product, Media } from "../types";
 
@@ -168,6 +169,10 @@ export default function Home() {
 
   return (
     <main className="pt-28">
+      <SEO 
+        title="ABAYAKUY | Jastip Abaya Mesir Terpercaya" 
+        description="Jasa Titip (Jastip) Abaya Mesir original, tangan pertama, koleksi pilihan terbaik. Tampil elegan dengan abaya berkualitas langsung dari Mesir."
+      />
       {/* ─── Hero ─── */}
       <section className="max-w-container-max mx-auto px-gutter pt-6 pb-section-padding animate-reveal">
         <HeroSlider heroProduct={heroProduct} />

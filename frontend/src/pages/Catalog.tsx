@@ -7,6 +7,7 @@ import React from 'react';
 import { motion } from 'motion/react';
 import { Product } from '../types';
 import { SlidersHorizontal, Loader2 } from 'lucide-react';
+import SEO from '../components/SEO';
 
 interface CatalogProps {
   products: Product[];
@@ -44,6 +45,10 @@ export const Catalog: React.FC<CatalogProps> = ({ products, loading, onProductCl
 
   return (
     <div className="pt-[100px] pb-20">
+      <SEO 
+        title="Katalog Produk | ABAYAKUY" 
+        description="Lihat seluruh koleksi abaya Mesir terbaru kami. Kualitas premium, desain elegan, dan jaminan original."
+      />
       {heroProduct && (
         <section className="max-w-[1440px] mx-auto px-6 md:px-12 mb-20">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
