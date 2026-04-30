@@ -24,3 +24,4 @@ jobs:
             git pull origin main
             docker compose up -d --build
             docker exec abaya-backend npx prisma migrate deploy
+            docker image prune -af

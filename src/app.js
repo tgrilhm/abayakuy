@@ -11,7 +11,7 @@ import { errorHandler } from './middlewares/error.middleware.js';
 import { startStagedMediaCleanup } from './services/stagedMedia.service.js';
 
 dotenv.config();
-
+//ok
 // ─── Startup env validation — fail fast with a clear message ───
 const REQUIRED_ENV = ['JWT_SECRET', 'ADMIN_USER', 'ADMIN_PASS'];
 const missingEnv = REQUIRED_ENV.filter((key) => !process.env[key]);
