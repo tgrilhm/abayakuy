@@ -729,7 +729,15 @@ export const AdminProductList: React.FC<AdminProductListProps> = ({ products, lo
                                   isDeleted ? 'opacity-30 border-red-300' : 'border-stone-200'
                                 }`}
                               >
-                                {media.type === 'video' ? (
+                                {media.status === 'processing' ? (
+                                  <div className="w-full h-full flex flex-col items-center justify-center bg-stone-50">
+                                    <Loader2 size={16} className="animate-spin text-stone-300" />
+                                  </div>
+                                ) : media.status === 'failed' ? (
+                                  <div className="w-full h-full flex flex-col items-center justify-center bg-red-50 text-red-400">
+                                    <X size={16} />
+                                  </div>
+                                ) : media.type === 'video' ? (
                                   <>
                                     <video src={media.url} className="w-full h-full object-cover" />
                                     <PlayCircle size={14} className="text-white absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 drop-shadow" />
@@ -817,6 +825,22 @@ export const AdminProductList: React.FC<AdminProductListProps> = ({ products, lo
                   >
                     {saving ? (
                       <><Loader2 size={13} className="animate-spin" /> Saving…</>
+                    ) : editingProduct ? (
+                      'Update Product'
+                    ) : (
+                      'Create Product'
+                    )}
+                  </button>
+                </div>
+              </form>
+            </motion.aside>
+          </>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+};
+2 size={13} className="animate-spin" /> Saving…</>
                     ) : editingProduct ? (
                       'Update Product'
                     ) : (
