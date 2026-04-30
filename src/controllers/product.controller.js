@@ -359,8 +359,8 @@ export const updateProduct = async (req, res, next) => {
       }
     }
 
-    // Invalidate product caches
-    await invalidateCache('products:*');
+    // Invalidate product caches in background
+    invalidateCache('products:*').catch(err => console.error('[CACHE ERROR]:', err));
 
     res.status(200).json(updatedProduct);
   } catch (error) {
@@ -384,8 +384,8 @@ export const deleteProduct = async (req, res, next) => {
     for (const mediaItem of existingProduct.media) await deleteFile(mediaItem.url);
     await prisma.product.delete({ where: { id } });
 
-    // Invalidate product caches
-    await invalidateCache('products:*');
+    // Invalidate product caches in background
+    invalidateCache('products:*').catch(err => console.error('[CACHE ERROR]:', err));
 
     res.status(200).json({ message: 'Product deleted successfully' });
   } catch (error) {
@@ -422,8 +422,8 @@ export const updateProductPages = async (req, res, next) => {
       include: { media: { orderBy: { order: 'asc' } } },
     });
 
-    // Invalidate product caches
-    await invalidateCache('products:*');
+    // Invalidate product caches in background
+    invalidateCache('products:*').catch(err => console.error('[CACHE ERROR]:', err));
 
     res.status(200).json(updated);
   } catch (error) {
