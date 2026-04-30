@@ -36,16 +36,30 @@ export default function ProductCard({
         } bg-surface-container ${isSmall ? "mb-4" : "mb-6"} overflow-hidden relative`}
       >
         {/* Skeleton placeholder while loading */}
-        {!loaded && <div className="absolute inset-0 skeleton" />}
+        {!loaded && <div className="absolute inset-0 skeleton z-20" />}
 
-        <img
-          className={`w-full h-full object-cover transition-all duration-700 ease-out group-hover:scale-[1.04] ${
-            loaded ? "opacity-100" : "opacity-0"
-          } ${!isAvailable ? "grayscale-[0.5] opacity-60" : ""}`}
-          alt={imageAlt || title}
-          src={imageSrc}
-          onLoad={() => setLoaded(true)}
-        />
+        {imageSrc.toLowerCase().endsWith('.mp4') || imageSrc.toLowerCase().endsWith('.webm') ? (
+          <video
+            className={`w-full h-full object-cover transition-all duration-700 ease-out group-hover:scale-[1.04] ${
+              loaded ? "opacity-100" : "opacity-0"
+            }`}
+            src={imageSrc}
+            muted
+            playsInline
+            autoPlay
+            loop
+            onLoadedData={() => setLoaded(true)}
+          />
+        ) : (
+          <img
+            className={`w-full h-full object-cover transition-all duration-700 ease-out group-hover:scale-[1.04] ${
+              loaded ? "opacity-100" : "opacity-0"
+            } ${!isAvailable ? "grayscale-[0.5] opacity-60" : ""}`}
+            alt={imageAlt || title}
+            src={imageSrc}
+            onLoad={() => setLoaded(true)}
+          />
+        )}
 
         {/* Sold Out Badge */}
         {!isAvailable && (
