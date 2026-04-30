@@ -15,9 +15,44 @@ async function ensureDir() {
 }
 
 /**
+ * Background worker to optimize video without blocking the user.
+ */
+const optimizeVideoInBackground = async (originalPath, optimizedPath) => {
+  console.log(`[BG-FFMPEG]: Starting background optimization for ${path.basename(originalPath)}`);
+  
+  ffmpeg(originalPath)
+    .outputOptions([
+      '-c:v libx264',
+      '-profile:v main',
+      '-level 3.1',
+      '-pix_fmt yuv420p',
+      '-crf 28',
+      '-preset fast',
+      '-vf scale=trunc(iw/2)*2:trunc(ih/2)*2',
+      '-c:a aac',
+      '-b:a 128k',
+      '-movflags +faststart'
+    ])
+    .toFormat('mp4')
+    .on('error', (err) => {
+      console.error(`[BG-FFMPEG ERROR]: Optimization failed for ${path.basename(originalPath)}:`, err.message);
+    })
+    .on('end', async () => {
+      try {
+        // Replace original with optimized version
+        await fs.rename(optimizedPath, originalPath);
+        console.log(`[BG-FFMPEG]: Successfully replaced original with optimized version: ${path.basename(originalPath)}`);
+      } catch (err) {
+        console.error(`[BG-FFMPEG ERROR]: Failed to swap files:`, err.message);
+      }
+    })
+    .save(optimizedPath);
+};
+
+/**
  * Convert a stored upload into the app's public media shape.
- * If it's an image, convert it to WebP and optimize.
- * If it's a video, compress it using ffmpeg.
+ * Images are processed immediately (fast).
+ * Videos are saved immediately, but optimized in the background (instant response).
  * @param {object} file - Multer file object
  * @returns {{ url: string, type: string }} - Public URL path and file type
  */
@@ -32,14 +67,13 @@ export const uploadFile = async (file) => {
   const filePath = path.join(UPLOAD_DIR, fileName);
   const type = file.mimetype.startsWith('video/') ? 'video' : 'image';
 
+  // --- Image Handling (Fast, keep synchronous) ---
   if (type === 'image') {
     const webpName = `${path.parse(fileName).name}.webp`;
     const webpPath = path.join(UPLOAD_DIR, webpName);
 
     try {
-      await sharp(filePath)
-        .webp({ quality: 80 })
-        .toFile(webpPath);
+      await sharp(filePath).webp({ quality: 80 }).toFile(webpPath);
       await fs.unlink(filePath);
       return { url: `/uploads/${webpName}`, type: 'image' };
     } catch (error) {
@@ -48,47 +82,19 @@ export const uploadFile = async (file) => {
     }
   }
 
+  // --- Video Handling (Instant response, background processing) ---
   if (type === 'video') {
-    const mp4Name = `${path.parse(fileName).name}-optimized.mp4`;
-    const mp4Path = path.join(UPLOAD_DIR, mp4Name);
+    // We return the original URL immediately
+    const publicUrl = `/uploads/${fileName}`;
+    const tempOptimizedPath = path.join(UPLOAD_DIR, `optimizing-${fileName}`);
 
-    console.log(`[FFMPEG]: Starting optimization for ${fileName}`);
+    // Trigger the background worker WITHOUT 'await'
+    optimizeVideoInBackground(filePath, tempOptimizedPath);
 
-    return new Promise((resolve) => {
-      ffmpeg(filePath)
-        .outputOptions([
-          '-c:v libx264',
-          '-profile:v main',    // High compatibility profile
-          '-level 3.1',         // Compatibility level for mobile
-          '-pix_fmt yuv420p',
-          '-crf 28',
-          '-preset fast',
-          '-vf scale=trunc(iw/2)*2:trunc(ih/2)*2',
-          '-c:a aac',
-          '-b:a 128k',
-          '-movflags +faststart'
-        ])
-        .toFormat('mp4')
-        .on('start', (commandLine) => {
-          console.log('[FFMPEG]: Spawned with command: ' + commandLine);
-        })
-        .on('error', (err, stdout, stderr) => {
-          console.error('[FFMPEG ERROR]:', err.message);
-          console.error('[FFMPEG STDERR]:', stderr);
-          resolve({ url: `/uploads/${fileName}`, type: 'video' }); // Fallback
-        })
-        .on('end', async () => {
-          console.log(`[FFMPEG]: Finished optimization for ${mp4Name}`);
-          try {
-            await fs.unlink(filePath); // Delete original
-            resolve({ url: `/uploads/${mp4Name}`, type: 'video' });
-          } catch (err) {
-            console.error('[FFMPEG]: Failed to delete original file:', err.message);
-            resolve({ url: `/uploads/${mp4Name}`, type: 'video' });
-          }
-        })
-        .save(mp4Path);
-    });
+    return {
+      url: publicUrl,
+      type: 'video',
+    };
   }
 
   return { url: `/uploads/${fileName}`, type };
