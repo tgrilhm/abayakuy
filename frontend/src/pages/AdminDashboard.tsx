@@ -5,7 +5,7 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { Search, Plus, Edit, Trash2, X, Upload, Loader2, PlayCircle, Package, Layout } from 'lucide-react';
-import { Product, KATEGORI_OPTIONS, UKURAN_OPTIONS, BAHAN_OPTIONS, WARNA_OPTIONS, Ukuran, Kategori, Bahan, Warna, formatUkuranDisplay } from '../types';
+import { Product, KATEGORI_OPTIONS, UKURAN_OPTIONS, BAHAN_OPTIONS, WARNA_OPTIONS, Ukuran, Kategori, Bahan, Warna, formatUkuranDisplay, StagedMedia } from '../types';
 import { api } from '../api';
 import { motion, AnimatePresence } from 'motion/react';
 
@@ -27,6 +27,20 @@ interface ProductFormData {
   kategori: Kategori | '';
   deskripsi: string;
   isAvailable: boolean;
+}
+
+type UploadState = 'queued' | 'uploading' | 'uploaded' | 'failed';
+
+interface LocalStagedUpload {
+  clientId: string;
+  file: File;
+  previewUrl: string;
+  progress: number;
+  uploadState: UploadState;
+  stagedId?: string;
+  serverUrl?: string;
+  serverData?: StagedMedia;
+  error?: string;
 }
 
 const emptyForm: ProductFormData = {
@@ -102,19 +116,26 @@ export const AdminProductList: React.FC<AdminProductListProps> = ({ products, lo
   const [showDrawer, setShowDrawer] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [formData, setFormData] = useState<ProductFormData>(emptyForm);
-  const [newFiles, setNewFiles] = useState<File[]>([]);
+  const [stagedUploads, setStagedUploads] = useState<LocalStagedUpload[]>([]);
   const [deletedMediaIds, setDeletedMediaIds] = useState<string[]>([]);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
   const [openPageMenuId, setOpenPageMenuId] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const uploadControllersRef = useRef<Record<string, AbortController>>({});
 
   // Lock body scroll when drawer is open
   useEffect(() => {
     document.body.style.overflow = showDrawer ? 'hidden' : '';
     return () => { document.body.style.overflow = ''; };
   }, [showDrawer]);
+
+  useEffect(() => {
+    return () => {
+      Object.values(uploadControllersRef.current).forEach((controller) => controller.abort());
+    };
+  }, []);
 
   const filtered = products.filter((p) => {
     const q = searchQuery.toLowerCase();
@@ -137,7 +158,7 @@ export const AdminProductList: React.FC<AdminProductListProps> = ({ products, lo
   const openAddDrawer = () => {
     setEditingProduct(null);
     setFormData(emptyForm);
-    setNewFiles([]);
+    setStagedUploads([]);
     setDeletedMediaIds([]);
     setError('');
     setShowDrawer(true);
@@ -158,19 +179,85 @@ export const AdminProductList: React.FC<AdminProductListProps> = ({ products, lo
       deskripsi: product.deskripsi || '',
       isAvailable: product.isAvailable ?? true,
     });
-    setNewFiles([]);
+    setStagedUploads([]);
     setDeletedMediaIds([]);
     setError('');
     setShowDrawer(true);
   };
 
-  const closeDrawer = () => {
+  const cleanupStagedUploads = async () => {
+    const uploadedIds = stagedUploads
+      .filter((item) => item.stagedId && item.uploadState === 'uploaded')
+      .map((item) => item.stagedId as string);
+
+    Object.values(uploadControllersRef.current).forEach((controller) => controller.abort());
+    uploadControllersRef.current = {};
+
+    await Promise.all(uploadedIds.map((id) => api.deleteStagedUpload(id).catch(() => null)));
+    stagedUploads.forEach((item) => URL.revokeObjectURL(item.previewUrl));
+  };
+
+  const closeDrawer = async () => {
+    await cleanupStagedUploads();
     setShowDrawer(false);
     setEditingProduct(null);
     setFormData(emptyForm);
-    setNewFiles([]);
+    setStagedUploads([]);
     setDeletedMediaIds([]);
     setError('');
+  };
+
+  const updateStagedUpload = (clientId: string, updater: (item: LocalStagedUpload) => LocalStagedUpload) => {
+    setStagedUploads((prev) => prev.map((item) => (item.clientId === clientId ? updater(item) : item)));
+  };
+
+  const startUpload = (upload: LocalStagedUpload) => {
+    const controller = new AbortController();
+    uploadControllersRef.current[upload.clientId] = controller;
+
+    updateStagedUpload(upload.clientId, (item) => ({
+      ...item,
+      uploadState: 'uploading',
+      progress: 0,
+      error: undefined,
+    }));
+
+    const { promise } = api.stageUpload(upload.file, {
+      signal: controller.signal,
+      onProgress: (percent) => {
+        updateStagedUpload(upload.clientId, (item) => ({
+          ...item,
+          progress: percent,
+        }));
+      },
+    });
+
+    promise
+      .then((result) => {
+        delete uploadControllersRef.current[upload.clientId];
+        updateStagedUpload(upload.clientId, (item) => ({
+          ...item,
+          uploadState: 'uploaded',
+          progress: 100,
+          stagedId: result.id,
+          serverUrl: result.url,
+          serverData: result,
+        }));
+      })
+      .catch((err: Error) => {
+        delete uploadControllersRef.current[upload.clientId];
+        if (err.message === 'Upload canceled') {
+          setStagedUploads((prev) => prev.filter((item) => item.clientId !== upload.clientId));
+          URL.revokeObjectURL(upload.previewUrl);
+          return;
+        }
+
+        updateStagedUpload(upload.clientId, (item) => ({
+          ...item,
+          uploadState: 'failed',
+          error: err.message || 'Upload failed',
+        }));
+      });
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -179,17 +266,45 @@ export const AdminProductList: React.FC<AdminProductListProps> = ({ products, lo
     const existingCount = editingProduct
       ? (editingProduct.media?.length || 0) - deletedMediaIds.length
       : 0;
-    const totalCount = existingCount + newFiles.length + selected.length;
+    const totalCount = existingCount + stagedUploads.length + selected.length;
 
     if (totalCount > 10) {
-      setError(`Max 10 files. You can add ${10 - existingCount - newFiles.length} more.`);
+      setError(`Max 10 files. You can add ${10 - existingCount - stagedUploads.length} more.`);
       e.target.value = '';
       return;
     }
 
-    setNewFiles((prev) => [...prev, ...selected]);
+    const nextUploads = selected.map((file) => ({
+      clientId: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+      file,
+      previewUrl: URL.createObjectURL(file),
+      progress: 0,
+      uploadState: 'queued' as UploadState,
+    }));
+
+    setStagedUploads((prev) => [...prev, ...nextUploads]);
+    nextUploads.forEach((upload) => startUpload(upload));
     setError('');
     e.target.value = '';
+  };
+
+  const removeStagedUpload = async (upload: LocalStagedUpload) => {
+    const controller = uploadControllersRef.current[upload.clientId];
+    if (controller) {
+      controller.abort();
+      delete uploadControllersRef.current[upload.clientId];
+    }
+
+    if (upload.stagedId) {
+      await api.deleteStagedUpload(upload.stagedId).catch(() => null);
+    }
+
+    URL.revokeObjectURL(upload.previewUrl);
+    setStagedUploads((prev) => prev.filter((item) => item.clientId !== upload.clientId));
+  };
+
+  const retryStagedUpload = (upload: LocalStagedUpload) => {
+    startUpload(upload);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -210,7 +325,10 @@ export const AdminProductList: React.FC<AdminProductListProps> = ({ products, lo
       if (formData.kategori) fd.append('kategori', formData.kategori);
       if (formData.deskripsi) fd.append('deskripsi', formData.deskripsi);
       fd.append('isAvailable', String(formData.isAvailable));
-      newFiles.forEach((file) => fd.append('media', file));
+      fd.append(
+        'stagedMediaIds',
+        JSON.stringify(stagedUploads.filter((item) => item.stagedId && item.uploadState === 'uploaded').map((item) => item.stagedId))
+      );
 
       if (editingProduct) {
         if (deletedMediaIds.length > 0) fd.append('deletedMedia', JSON.stringify(deletedMediaIds));
@@ -221,13 +339,34 @@ export const AdminProductList: React.FC<AdminProductListProps> = ({ products, lo
         showToast('Product created successfully!');
       }
 
-      closeDrawer();
+      stagedUploads.forEach((item) => URL.revokeObjectURL(item.previewUrl));
+      uploadControllersRef.current = {};
+      setShowDrawer(false);
+      setEditingProduct(null);
+      setFormData(emptyForm);
+      setStagedUploads([]);
+      setDeletedMediaIds([]);
+      setError('');
       onRefresh();
     } catch (err: any) {
       setError(err.message || 'Failed to save product');
     } finally {
       setSaving(false);
     }
+  };
+
+  const uploadingCount = stagedUploads.filter((item) => item.uploadState === 'uploading' || item.uploadState === 'queued').length;
+  const failedCount = stagedUploads.filter((item) => item.uploadState === 'failed').length;
+  const hasPendingUploads = uploadingCount > 0;
+  const canSubmit = !saving && !hasPendingUploads && failedCount === 0;
+  const newFiles = stagedUploads.map((item) => item.file);
+  const setNewFiles = (updater: File[] | ((files: File[]) => File[])) => {
+    const nextFiles = typeof updater === 'function' ? updater(newFiles) : updater;
+    const nextFileSet = new Set(nextFiles);
+    const removedUploads = stagedUploads.filter((item) => !nextFileSet.has(item.file));
+    removedUploads.forEach((item) => {
+      void removeStagedUpload(item);
+    });
   };
 
   const handleDelete = async (product: Product) => {
@@ -779,19 +918,19 @@ export const AdminProductList: React.FC<AdminProductListProps> = ({ products, lo
                     )}
 
                     {/* New files preview */}
-                    {newFiles.length > 0 && (
+                    {stagedUploads.length > 0 && (
                       <div className="mb-4">
                         <p className="font-sans text-[11px] text-stone-400 mb-2">New files</p>
                         <div className="grid grid-cols-5 gap-2">
-                          {newFiles.map((file, index) => (
-                            <div key={index} className="relative aspect-square bg-stone-100 overflow-hidden border border-stone-800/20">
-                              {file.type.startsWith('video/') ? (
+                          {stagedUploads.map((upload, index) => (
+                            <div key={upload.clientId} className="relative aspect-square bg-stone-100 overflow-hidden border border-stone-800/20">
+                              {upload.file.type.startsWith('video/') ? (
                                 <>
-                                  <video src={URL.createObjectURL(file)} className="w-full h-full object-cover" />
+                                  <video src={upload.previewUrl} className="w-full h-full object-cover" />
                                   <PlayCircle size={14} className="text-white absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 drop-shadow" />
                                 </>
                               ) : (
-                                <img src={URL.createObjectURL(file)} alt="" className="w-full h-full object-cover" />
+                                <img src={upload.previewUrl} alt="" className="w-full h-full object-cover" />
                               )}
                               <button
                                 type="button"
@@ -803,6 +942,58 @@ export const AdminProductList: React.FC<AdminProductListProps> = ({ products, lo
                             </div>
                           ))}
                         </div>
+                      </div>
+                    )}
+
+                    {stagedUploads.length > 0 && (
+                      <div className="mb-4 space-y-2">
+                        <div className="flex items-center justify-between">
+                          <p className="font-sans text-[11px] text-stone-400">Upload progress</p>
+                          <p className="font-sans text-[10px] text-stone-400">
+                            {hasPendingUploads
+                              ? `${uploadingCount} uploading`
+                              : failedCount > 0
+                                ? `${failedCount} failed`
+                                : 'All uploads complete'}
+                          </p>
+                        </div>
+                        {stagedUploads.map((upload) => (
+                          <div key={`${upload.clientId}-progress`} className="border border-stone-200 bg-stone-50 px-3 py-2">
+                            <div className="flex items-center justify-between gap-3">
+                              <div className="min-w-0">
+                                <p className="font-sans text-[11px] text-stone-700 truncate">{upload.file.name}</p>
+                                <p className="font-sans text-[10px] text-stone-400">
+                                  {upload.uploadState === 'uploaded'
+                                    ? 'Uploaded'
+                                    : upload.uploadState === 'failed'
+                                      ? upload.error || 'Upload failed'
+                                      : `${upload.progress}% uploaded`}
+                                </p>
+                              </div>
+                              {upload.uploadState === 'failed' ? (
+                                <button
+                                  type="button"
+                                  onClick={() => retryStagedUpload(upload)}
+                                  className="font-sans text-[10px] uppercase tracking-[0.12em] text-stone-700 hover:text-black"
+                                >
+                                  Retry
+                                </button>
+                              ) : null}
+                            </div>
+                            <div className="mt-2 h-1.5 w-full bg-stone-200 overflow-hidden">
+                              <div
+                                className={`h-full transition-all duration-200 ${
+                                  upload.uploadState === 'failed'
+                                    ? 'bg-red-400'
+                                    : upload.uploadState === 'uploaded'
+                                      ? 'bg-emerald-500'
+                                      : 'bg-stone-800'
+                                }`}
+                                style={{ width: `${upload.progress}%` }}
+                              />
+                            </div>
+                          </div>
+                        ))}
                       </div>
                     )}
 
@@ -840,11 +1031,15 @@ export const AdminProductList: React.FC<AdminProductListProps> = ({ products, lo
                   </button>
                   <button
                     type="submit"
-                    disabled={saving}
+                    disabled={!canSubmit}
                     className="flex-2 flex-grow-[2] py-3 bg-stone-900 text-white font-sans text-[11px] tracking-[0.2em] uppercase hover:bg-stone-700 transition-colors duration-200 disabled:opacity-40 flex items-center justify-center gap-2"
                   >
                     {saving ? (
                       <><Loader2 size={13} className="animate-spin" /> Saving…</>
+                    ) : hasPendingUploads ? (
+                      'Uploading media...'
+                    ) : failedCount > 0 ? (
+                      'Fix upload errors'
                     ) : editingProduct ? (
                       'Update Product'
                     ) : (

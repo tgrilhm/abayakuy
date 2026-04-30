@@ -52,5 +52,5 @@ const upload = multer({
   },
 });
 
-// Accept multiple files under the field name 'media'
+export const singleUploadMiddleware = upload.single('media');
 export const uploadMiddleware = upload.array('media', 10);

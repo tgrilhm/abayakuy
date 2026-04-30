@@ -1,7 +1,9 @@
 import prisma from '../config/prisma.js';
-import { uploadFiles, deleteFile } from '../services/upload.service.js';
+import path from 'path';
+import { uploadFiles, deleteFile, getMediaStatusForType, shouldQueueProcessingForType } from '../services/upload.service.js';
 import { getOrCache, invalidateCache } from '../config/redis.js';
 import { videoQueue } from '../services/videoQueue.js';
+import { getStagedMediaByIds, deleteStagedMediaByIds } from '../services/stagedMedia.service.js';
 
 // ─── Enum mappings ───────────────────────────────────────────────────────────
 // Maps the display string sent from the frontend to the Prisma enum key.
@@ -127,11 +129,37 @@ function parseOptionalUrl(value) {
   return trimmed;
 }
 
+function parseJsonArrayInput(raw) {
+  if (!raw) return [];
+  if (Array.isArray(raw)) return raw;
+
+  try {
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
+function stagedRecordToMediaInput(record) {
+  return {
+    url: record.url,
+    type: record.type,
+    status: getMediaStatusForType(record.type),
+    path: path.join(process.cwd(), 'uploads', path.basename(record.url)),
+    fileName: path.basename(record.url),
+    originalName: record.originalName,
+    size: record.size,
+    mimetype: record.mimeType,
+    shouldQueueProcessing: shouldQueueProcessingForType(record.type),
+  };
+}
+
 // ─── Controllers ─────────────────────────────────────────────────────────────
 
 export const createProduct = async (req, res, next) => {
   try {
-    const { kode, nama, brand, shopeeUrl, link, bahan, ukuran, warna, harga, kategori, deskripsi, isAvailable } = req.body;
+    const { kode, nama, brand, shopeeUrl, link, bahan, ukuran, warna, harga, kategori, deskripsi, isAvailable, stagedMediaIds } = req.body;
     const requestStartedAt = Date.now();
 
     if (!kode || !brand || !bahan || !ukuran || !warna || !harga) {
@@ -146,7 +174,13 @@ export const createProduct = async (req, res, next) => {
     if (rawProductLink !== undefined && parsedProductLink === null && String(rawProductLink).trim() !== '') {
       return res.status(400).json({ error: 'Invalid Shopee URL. Please use a full http:// or https:// link.' });
     }
-    const mediaResults = await uploadFiles(req.files);
+    const stagedIds = parseJsonArrayInput(stagedMediaIds);
+    const uploadedMedia = await uploadFiles(req.files);
+    const consumedStagedMedia = await getStagedMediaByIds(stagedIds);
+    const mediaResults = [
+      ...consumedStagedMedia.map(stagedRecordToMediaInput),
+      ...uploadedMedia,
+    ];
 
     const product = await prisma.product.create({
       data: {
@@ -197,6 +231,7 @@ export const createProduct = async (req, res, next) => {
 
     // Invalidate product caches
     await invalidateCache('products:*');
+    await deleteStagedMediaByIds(stagedIds);
 
     console.log('[PRODUCT CREATE]: Product created with queued media', {
       productId: product.id,
@@ -303,7 +338,7 @@ export const getProductById = async (req, res, next) => {
 export const updateProduct = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const { kode, nama, brand, shopeeUrl, link, bahan, ukuran, warna, harga, kategori, deskripsi, deletedMedia, isAvailable } = req.body;
+    const { kode, nama, brand, shopeeUrl, link, bahan, ukuran, warna, harga, kategori, deskripsi, deletedMedia, isAvailable, stagedMediaIds } = req.body;
     const requestStartedAt = Date.now();
 
     const existingProduct = await prisma.product.findUnique({
@@ -329,7 +364,13 @@ export const updateProduct = async (req, res, next) => {
       }
     }
 
-    const mediaResults = await uploadFiles(req.files);
+    const stagedIds = parseJsonArrayInput(stagedMediaIds);
+    const uploadedMedia = await uploadFiles(req.files);
+    const consumedStagedMedia = await getStagedMediaByIds(stagedIds);
+    const mediaResults = [
+      ...consumedStagedMedia.map(stagedRecordToMediaInput),
+      ...uploadedMedia,
+    ];
     const rawProductLink = shopeeUrl ?? link;
     const parsedProductLink = parseOptionalUrl(rawProductLink);
     if (rawProductLink !== undefined && parsedProductLink === null && String(rawProductLink).trim() !== '') {
@@ -390,6 +431,7 @@ export const updateProduct = async (req, res, next) => {
 
     // Invalidate product caches in background
     invalidateCache('products:*').catch(err => console.error('[CACHE ERROR]:', err));
+    await deleteStagedMediaByIds(stagedIds);
 
     console.log('[PRODUCT UPDATE]: Product updated with queued media', {
       productId: updatedProduct.id,

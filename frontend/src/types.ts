@@ -6,6 +6,18 @@ export interface Media {
   order: number;
 }
 
+export interface StagedMedia {
+  id: string;
+  token: string;
+  url: string;
+  type: 'image' | 'video';
+  status: 'uploaded';
+  originalName: string;
+  size: number;
+  mimeType?: string | null;
+  expiresAt: string;
+}
+
 export type Kategori =
   | 'Outer Abaya'
   | 'Instant Abaya'

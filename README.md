@@ -29,13 +29,16 @@ A production-ready web application for managing an abaya product catalog.
    - `VIDEO_WORKER_CONCURRENCY`: optional queue worker concurrency, default `1` for small VPS instances
    - `VIDEO_PROCESSING_MODE`: `passthrough` to publish raw videos immediately, `transcode` to keep background ffmpeg processing
    - `MAX_VIDEO_UPLOAD_MB`: practical VPS-side size cap for uploaded videos
+   - `STAGED_MEDIA_TTL_HOURS`: how long admin pre-uploads can wait before automatic cleanup
+   - `STAGED_MEDIA_CLEANUP_INTERVAL_MS`: how often the backend removes expired staged uploads
 
 ### 3. Storage And Processing
 1. The app writes uploaded images and videos to `uploads/`.
 2. Mount that directory to persistent storage in production.
 3. Images are converted to `.webp` in the background.
 4. Videos can either publish immediately in raw form or be transcoded in the background, depending on `VIDEO_PROCESSING_MODE`.
-5. Check `GET /api/health` to verify Redis, queue counts, and upload directory access.
+5. Admin uploads can be staged before product creation, with automatic cleanup for abandoned files.
+6. Check `GET /api/health` to verify Redis, queue counts, and upload directory access.
 
 ### 4. Install and Initialize
 ```bash

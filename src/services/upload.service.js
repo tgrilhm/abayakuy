@@ -10,6 +10,12 @@ const SUPPORTED_VIDEO_MIME_TYPES = new Set([
   'video/quicktime',
 ]);
 
+export const shouldQueueProcessingForType = (type) =>
+  type === 'image' || (type === 'video' && VIDEO_PROCESSING_MODE === 'transcode');
+
+export const getMediaStatusForType = (type) =>
+  shouldQueueProcessingForType(type) ? 'processing' : 'ready';
+
 // Ensure upload directory exists
 async function ensureDir() {
   try {
@@ -54,8 +60,7 @@ export const uploadFile = async (file) => {
 
   const filePath = path.join(UPLOAD_DIR, fileName);
   const type = file.mimetype.startsWith('video/') ? 'video' : 'image';
-  const shouldQueueProcessing =
-    type === 'image' || (type === 'video' && VIDEO_PROCESSING_MODE === 'transcode');
+  const shouldQueueProcessing = shouldQueueProcessingForType(type);
 
   if (type === 'video') {
     await validateVideoFile(file, filePath);

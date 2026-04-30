@@ -1,4 +1,4 @@
-import { PaginatedProducts } from './types';
+import { PaginatedProducts, StagedMedia } from './types';
 
 const API_URL = '/api';
 
@@ -102,6 +102,77 @@ export const api = {
       method: 'PUT',
       headers: getAuthHeaders(),
       body: formData,
+    });
+    return parseResponse(res);
+  },
+
+  stageUpload: (file: File, options?: { onProgress?: (percent: number) => void; signal?: AbortSignal }) => {
+    const xhr = new XMLHttpRequest();
+    const formData = new FormData();
+    formData.append('media', file);
+
+    const promise = new Promise<StagedMedia>((resolve, reject) => {
+      xhr.open('POST', `${API_URL}/uploads/stage`);
+
+      const headers = getAuthHeaders();
+      Object.entries(headers).forEach(([key, value]) => {
+        xhr.setRequestHeader(key, value);
+      });
+
+      xhr.upload.onprogress = (event) => {
+        if (!event.lengthComputable || !options?.onProgress) return;
+        const percent = Math.round((event.loaded / event.total) * 100);
+        options.onProgress(percent);
+      };
+
+      xhr.onerror = () => reject(new Error('Upload failed'));
+      xhr.onabort = () => reject(new Error('Upload canceled'));
+
+      xhr.onload = () => {
+        const contentType = xhr.getResponseHeader('content-type') || '';
+        const text = xhr.responseText || '';
+
+        if (contentType.includes('application/json')) {
+          const data = JSON.parse(text || '{}');
+          if (xhr.status >= 200 && xhr.status < 300) {
+            resolve(data);
+            return;
+          }
+          reject(new Error(data.error || data.message || `Request failed with status ${xhr.status}`));
+          return;
+        }
+
+        if (xhr.status === 413 || text.includes('Request Entity Too Large')) {
+          reject(new Error(MAX_UPLOAD_MESSAGE));
+          return;
+        }
+
+        if (xhr.status >= 200 && xhr.status < 300) {
+          resolve(JSON.parse(text));
+          return;
+        }
+
+        reject(new Error(text || `Request failed with status ${xhr.status}`));
+      };
+
+      if (options?.signal) {
+        if (options.signal.aborted) {
+          xhr.abort();
+          return;
+        }
+        options.signal.addEventListener('abort', () => xhr.abort(), { once: true });
+      }
+
+      xhr.send(formData);
+    });
+
+    return { xhr, promise };
+  },
+
+  deleteStagedUpload: async (id: string) => {
+    const res = await fetch(`${API_URL}/uploads/stage/${id}`, {
+      method: 'DELETE',
+      headers: getAuthHeaders(),
     });
     return parseResponse(res);
   },

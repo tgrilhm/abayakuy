@@ -96,3 +96,19 @@ model Media {
 
   @@map("media")
 }
+
+model StagedMedia {
+  id           String   @id @default(uuid()) @db.Uuid
+  token        String   @unique
+  url          String
+  type         String
+  status       String   @default("uploaded")
+  originalName String
+  size         Int
+  mimeType     String?
+  expiresAt    DateTime
+  created_at   DateTime @default(now())
+
+  @@index([expiresAt])
+  @@map("staged_media")
+}

@@ -6,7 +6,9 @@ import compression from 'compression';
 import healthRoutes from './routes/health.routes.js';
 import authRoutes from './routes/auth.routes.js';
 import productRoutes from './routes/product.routes.js';
+import uploadRoutes from './routes/upload.routes.js';
 import { errorHandler } from './middlewares/error.middleware.js';
+import { startStagedMediaCleanup } from './services/stagedMedia.service.js';
 
 dotenv.config();
 
@@ -70,6 +72,7 @@ if (process.env.NODE_ENV !== 'production') {
 // ─── Routes ───
 app.use('/api/health', healthRoutes);
 app.use('/api/auth', authRoutes);
+app.use('/api/uploads', uploadRoutes);
 app.use('/api/products', productRoutes);
 
 // ─── 404 handler for unmatched API routes ───
@@ -81,6 +84,8 @@ app.use('/api/*', (req, res) => {
 app.use(errorHandler);
 
 const PORT = process.env.PORT || 3000;
+
+startStagedMediaCleanup();
 
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
