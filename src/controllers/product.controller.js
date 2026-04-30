@@ -172,16 +172,15 @@ export const createProduct = async (req, res, next) => {
       include: { media: { orderBy: { order: 'asc' } } },
     });
 
-    // Queue video processing jobs
+    // Queue media processing jobs
     for (const m of mediaResults) {
-      if (m.type === 'video') {
-        const mediaRecord = product.media.find(rm => rm.url === m.url);
-        if (mediaRecord) {
-          await videoQueue.add('optimize-video', {
-            rawFilePath: m.path,
-            mediaId: mediaRecord.id
-          });
-        }
+      const mediaRecord = product.media.find(rm => rm.url === m.url);
+      if (mediaRecord) {
+        const jobName = m.type === 'video' ? 'optimize-video' : 'optimize-image';
+        await videoQueue.add(jobName, {
+          rawFilePath: m.path,
+          mediaId: mediaRecord.id
+        });
       }
     }
 
@@ -348,16 +347,15 @@ export const updateProduct = async (req, res, next) => {
       include: { media: { orderBy: { order: 'asc' } } },
     });
 
-    // Queue video processing jobs for new media
+    // Queue media processing jobs for new media
     for (const m of mediaResults) {
-      if (m.type === 'video') {
-        const mediaRecord = updatedProduct.media.find(rm => rm.url === m.url);
-        if (mediaRecord) {
-          await videoQueue.add('optimize-video', {
-            rawFilePath: m.path,
-            mediaId: mediaRecord.id
-          });
-        }
+      const mediaRecord = updatedProduct.media.find(rm => rm.url === m.url);
+      if (mediaRecord) {
+        const jobName = m.type === 'video' ? 'optimize-video' : 'optimize-image';
+        await videoQueue.add(jobName, {
+          rawFilePath: m.path,
+          mediaId: mediaRecord.id
+        });
       }
     }
 

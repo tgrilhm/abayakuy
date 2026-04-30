@@ -15,9 +15,8 @@ async function ensureDir() {
 }
 
 /**
- * Convert a stored upload into the app's public media shape.
- * Images are processed immediately (fast).
- * Videos are saved immediately and returned with 'processing' status if needed.
+ * Upload files immediately and return raw paths with processing status.
+ * Both images and videos are deferred to the background queue.
  * @param {object} file - Multer file object
  * @returns {{ url: string, type: string, status: string, path: string }}
  */
@@ -32,32 +31,14 @@ export const uploadFile = async (file) => {
   const filePath = path.join(UPLOAD_DIR, fileName);
   const type = file.mimetype.startsWith('video/') ? 'video' : 'image';
 
-  // --- Image Handling (Fast, keep synchronous) ---
-  if (type === 'image') {
-    const webpName = `${path.parse(fileName).name}.webp`;
-    const webpPath = path.join(UPLOAD_DIR, webpName);
-
-    try {
-      await sharp(filePath).webp({ quality: 80 }).toFile(webpPath);
-      await fs.unlink(filePath);
-      return { url: `/uploads/${webpName}`, type: 'image', status: 'ready', path: webpPath };
-    } catch (error) {
-      console.error('Image optimization failed:', error.message);
-      return { url: `/uploads/${fileName}`, type: 'image', status: 'ready', path: filePath };
-    }
-  }
-
-  // --- Video Handling ---
-  if (type === 'video') {
-    return {
-      url: `/uploads/${fileName}`,
-      type: 'video',
-      status: 'processing',
-      path: filePath
-    };
-  }
-
-  return { url: `/uploads/${fileName}`, type, status: 'ready', path: filePath };
+  // Both image and video return instantly to keep the request incredibly fast.
+  // The heavy lifting (ffmpeg or sharp) will be done by BullMQ.
+  return {
+    url: `/uploads/${fileName}`,
+    type,
+    status: 'processing',
+    path: filePath
+  };
 };
 
 /**
