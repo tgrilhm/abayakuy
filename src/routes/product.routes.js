@@ -9,6 +9,7 @@ import {
   updateProduct,
   updateProductPages,
   deleteProduct,
+  getMediaStatus,
 } from '../controllers/product.controller.js';
 import { requireAuth } from '../middlewares/auth.middleware.js';
 import { uploadMiddleware } from '../middlewares/upload.middleware.js';
