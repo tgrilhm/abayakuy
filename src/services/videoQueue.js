@@ -5,6 +5,7 @@ import ffmpeg from 'fluent-ffmpeg';
 import sharp from 'sharp';
 import prisma from '../config/prisma.js';
 import redis from '../config/redis.js';
+import { invalidateCache } from '../config/redis.js';
 
 const UPLOAD_DIR = path.join(process.cwd(), 'uploads');
 const VIDEO_CONCURRENCY = Math.max(1, parseInt(process.env.VIDEO_WORKER_CONCURRENCY || '1', 10));
@@ -104,6 +105,8 @@ const processMediaJob = async (job) => {
           status: 'ready',
         }
       });
+      await invalidateCache('products:*');
+      console.log(`[QUEUE-WORKER]: Invalidated product caches after media ${mediaId} became ready`);
 
       console.log('[QUEUE-WORKER]: Successfully optimized video', {
         jobId: job.id,
@@ -116,6 +119,8 @@ const processMediaJob = async (job) => {
       console.error(`[QUEUE-WORKER ERROR]: Video failed for ${fileName}:`, err.message);
       try { await fs.unlink(tempOptimizedPath); } catch {}
       await prisma.media.update({ where: { id: mediaId }, data: { status: 'failed' } });
+      await invalidateCache('products:*');
+      console.log(`[QUEUE-WORKER]: Invalidated product caches after media ${mediaId} failed`);
       throw err;
     }
   }
@@ -139,6 +144,8 @@ const processMediaJob = async (job) => {
           status: 'ready' 
         }
       });
+      await invalidateCache('products:*');
+      console.log(`[QUEUE-WORKER]: Invalidated product caches after media ${mediaId} became ready`);
 
       console.log('[QUEUE-WORKER]: Successfully optimized image', {
         jobId: job.id,
@@ -149,6 +156,8 @@ const processMediaJob = async (job) => {
     } catch (err) {
       console.error(`[QUEUE-WORKER ERROR]: Image failed for ${fileName}:`, err.message);
       await prisma.media.update({ where: { id: mediaId }, data: { status: 'failed' } });
+      await invalidateCache('products:*');
+      console.log(`[QUEUE-WORKER]: Invalidated product caches after media ${mediaId} failed`);
       throw err;
     }
   }

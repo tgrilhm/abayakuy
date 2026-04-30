@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { AdminProductList } from "./AdminDashboard";
 import { api } from "../api";
-import { Product } from "../types";
+import { Product, Media } from "../types";
 
 const normalizeProduct = (product: Product): Product => ({
   ...product,
@@ -27,6 +27,7 @@ export default function Dashboard() {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [processingCount, setProcessingCount] = useState(0);
+  const [polling, setPolling] = useState(false);
   const navigate = useNavigate();
 
   const fetchProducts = useCallback(async () => {
@@ -62,12 +63,83 @@ export default function Dashboard() {
   useEffect(() => {
     if (processingCount === 0) return;
 
-    const interval = setInterval(() => {
-      fetchProducts();
+    let isActive = true;
+
+    const interval = setInterval(async () => {
+      if (!isActive || polling) return;
+
+      const processingProducts = products.filter((product) =>
+        (product.media ?? []).some((media) => media.status === 'processing')
+      );
+
+      if (processingProducts.length === 0) return;
+
+      setPolling(true);
+      try {
+        const statusResults = await Promise.all(
+          processingProducts.map((product) => api.getMediaStatus(product.id))
+        );
+
+        if (!isActive) return;
+
+        const nextStatuses = new Map<string, Media[]>();
+        statusResults.forEach((statusList, index) => {
+          nextStatuses.set(processingProducts[index].id, statusList);
+        });
+
+        let nextProcessingCount = 0;
+        let shouldRefreshProducts = false;
+
+        setProducts((prev) =>
+          prev.map((product) => {
+            const statusList = nextStatuses.get(product.id);
+            if (!statusList) {
+              nextProcessingCount += (product.media ?? []).filter((media) => media.status === 'processing').length;
+              return product;
+            }
+
+            const mergedMedia = (product.media ?? []).map((media) => {
+              const latest = statusList.find((item) => item.id === media.id);
+              return latest ? { ...media, status: latest.status, url: latest.url, type: latest.type } : media;
+            });
+
+            const mergedProcessingCount = mergedMedia.filter((media) => media.status === 'processing').length;
+            nextProcessingCount += mergedProcessingCount;
+
+            if ((product.media ?? []).some((media) => media.status === 'processing') && mergedProcessingCount === 0) {
+              shouldRefreshProducts = true;
+            }
+
+            if ((product.media ?? []).some((media) => media.status === 'processing') && mergedMedia.some((media) => media.status === 'failed')) {
+              shouldRefreshProducts = true;
+            }
+
+            return {
+              ...product,
+              media: mergedMedia,
+            };
+          })
+        );
+
+        setProcessingCount(nextProcessingCount);
+
+        if (shouldRefreshProducts) {
+          await fetchProducts();
+        }
+      } catch (err) {
+        console.error('Failed to poll media status:', err);
+      } finally {
+        if (isActive) {
+          setPolling(false);
+        }
+      }
     }, 3000);
 
-    return () => clearInterval(interval);
-  }, [fetchProducts, processingCount]);
+    return () => {
+      isActive = false;
+      clearInterval(interval);
+    };
+  }, [fetchProducts, polling, processingCount, products]);
 
   const handleLogout = () => {
     api.logout();
