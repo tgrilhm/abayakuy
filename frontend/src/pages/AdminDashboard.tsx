@@ -349,7 +349,24 @@ export const AdminProductList: React.FC<AdminProductListProps> = ({ products, lo
                         <div className="flex items-center gap-3">
                           <div className="w-10 h-13 bg-stone-100 overflow-hidden flex-shrink-0 aspect-[3/4]">
                             {getImageUrl(product) ? (
-                              <img src={getImageUrl(product)} alt="" className="w-full h-full object-cover" />
+                              (() => {
+                                const media = product.media?.find((m) => m.type === 'image');
+                                if (media?.status === 'processing') {
+                                  return (
+                                    <div className="w-full h-full flex items-center justify-center bg-stone-50">
+                                      <Loader2 size={12} className="animate-spin text-stone-300" />
+                                    </div>
+                                  );
+                                }
+                                if (media?.status === 'failed') {
+                                  return (
+                                    <div className="w-full h-full flex items-center justify-center bg-red-50 text-red-300">
+                                      <X size={12} />
+                                    </div>
+                                  );
+                                }
+                                return <img src={getImageUrl(product)} alt="" className="w-full h-full object-cover" />;
+                              })()
                             ) : (
                               <div className="w-full h-full flex items-center justify-center text-stone-300 text-xs">—</div>
                             )}
@@ -825,22 +842,6 @@ export const AdminProductList: React.FC<AdminProductListProps> = ({ products, lo
                   >
                     {saving ? (
                       <><Loader2 size={13} className="animate-spin" /> Saving…</>
-                    ) : editingProduct ? (
-                      'Update Product'
-                    ) : (
-                      'Create Product'
-                    )}
-                  </button>
-                </div>
-              </form>
-            </motion.aside>
-          </>
-        )}
-      </AnimatePresence>
-    </div>
-  );
-};
-2 size={13} className="animate-spin" /> Saving…</>
                     ) : editingProduct ? (
                       'Update Product'
                     ) : (
