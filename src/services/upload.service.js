@@ -2,6 +2,13 @@ import path from 'path';
 import fs from 'fs/promises';
 
 const UPLOAD_DIR = path.join(process.cwd(), 'uploads');
+const VIDEO_PROCESSING_MODE = (process.env.VIDEO_PROCESSING_MODE || 'passthrough').toLowerCase();
+const MAX_VIDEO_UPLOAD_MB = Math.max(1, parseInt(process.env.MAX_VIDEO_UPLOAD_MB || '150', 10));
+const SUPPORTED_VIDEO_MIME_TYPES = new Set([
+  'video/mp4',
+  'video/webm',
+  'video/quicktime',
+]);
 
 // Ensure upload directory exists
 async function ensureDir() {
@@ -11,6 +18,25 @@ async function ensureDir() {
     await fs.mkdir(UPLOAD_DIR, { recursive: true });
   }
 }
+
+const removeUploadedFile = async (filePath) => {
+  try {
+    await fs.unlink(filePath);
+  } catch {}
+};
+
+const validateVideoFile = async (file, filePath) => {
+  if (!SUPPORTED_VIDEO_MIME_TYPES.has(file.mimetype)) {
+    await removeUploadedFile(filePath);
+    throw new Error('Unsupported video format. Please upload MP4, WebM, or MOV files.');
+  }
+
+  const fileSizeMb = (file.size ?? 0) / (1024 * 1024);
+  if (fileSizeMb > MAX_VIDEO_UPLOAD_MB) {
+    await removeUploadedFile(filePath);
+    throw new Error(`Video too large. Please keep videos under ${MAX_VIDEO_UPLOAD_MB}MB.`);
+  }
+};
 
 /**
  * Upload files immediately and return raw paths with processing status.
@@ -28,18 +54,23 @@ export const uploadFile = async (file) => {
 
   const filePath = path.join(UPLOAD_DIR, fileName);
   const type = file.mimetype.startsWith('video/') ? 'video' : 'image';
+  const shouldQueueProcessing =
+    type === 'image' || (type === 'video' && VIDEO_PROCESSING_MODE === 'transcode');
 
-  // Both image and video return instantly to keep the request incredibly fast.
-  // The heavy lifting (ffmpeg or sharp) will be done by BullMQ.
+  if (type === 'video') {
+    await validateVideoFile(file, filePath);
+  }
+
   return {
     url: `/uploads/${fileName}`,
     type,
-    status: 'processing',
+    status: shouldQueueProcessing ? 'processing' : 'ready',
     path: filePath,
     fileName,
     originalName: file.originalname,
     size: file.size ?? null,
     mimetype: file.mimetype ?? null,
+    shouldQueueProcessing,
   };
 };
 

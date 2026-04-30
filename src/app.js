@@ -55,6 +55,7 @@ app.use('/uploads', express.static('uploads', {
   setHeaders: (res, path) => {
     if (path.endsWith('.mp4')) res.setHeader('Content-Type', 'video/mp4');
     if (path.endsWith('.webm')) res.setHeader('Content-Type', 'video/webm');
+    if (path.endsWith('.mov')) res.setHeader('Content-Type', 'video/quicktime');
   }
 }));
 

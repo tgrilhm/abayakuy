@@ -3,6 +3,13 @@ import { useParams, Link } from "react-router-dom";
 import { api } from "../api";
 import { Product, Media, formatUkuranDisplay } from "../types";
 
+function getVideoMimeType(url: string) {
+  const cleanUrl = url.split('?')[0].toLowerCase();
+  if (cleanUrl.endsWith('.webm')) return 'video/webm';
+  if (cleanUrl.endsWith('.mov')) return 'video/quicktime';
+  return 'video/mp4';
+}
+
 function SkeletonDetail() {
   return (
     <div className="pt-32 min-h-screen max-w-[1280px] mx-auto px-8 py-12 animate-pulse">
@@ -128,7 +135,7 @@ export default function ProductDetail() {
                       onLoadedData={() => setImgLoaded(true)}
                       className={`w-full h-full object-cover transition-opacity duration-500 ${imgLoaded ? "opacity-100" : "opacity-0"}`}
                     >
-                      <source src={selectedMedia.url} type="video/mp4" />
+                      <source src={selectedMedia.url} type={getVideoMimeType(selectedMedia.url)} />
                       Your browser does not support the video tag.
                     </video>
                   )

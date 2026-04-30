@@ -3,6 +3,11 @@ import path from 'path';
 import multer from 'multer';
 
 const UPLOAD_DIR = path.join(process.cwd(), 'uploads');
+const SUPPORTED_VIDEO_MIME_TYPES = new Set([
+  'video/mp4',
+  'video/webm',
+  'video/quicktime',
+]);
 
 function ensureUploadDir() {
   if (!fs.existsSync(UPLOAD_DIR)) {
@@ -25,8 +30,14 @@ const storage = multer.diskStorage({
 
 // File filter: only accept images and videos
 const fileFilter = (req, file, cb) => {
-  if (file.mimetype.startsWith('image/') || file.mimetype.startsWith('video/')) {
+  if (file.mimetype.startsWith('image/')) {
     cb(null, true);
+  } else if (file.mimetype.startsWith('video/')) {
+    if (SUPPORTED_VIDEO_MIME_TYPES.has(file.mimetype)) {
+      cb(null, true);
+      return;
+    }
+    cb(new Error('Unsupported video format. Please upload MP4, WebM, or MOV files.'), false);
   } else {
     cb(new Error('Only image and video files are allowed'), false);
   }

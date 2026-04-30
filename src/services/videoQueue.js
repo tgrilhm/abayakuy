@@ -46,7 +46,9 @@ const processMediaJob = async (job) => {
   const startedAt = Date.now();
 
   if (job.name === 'optimize-video') {
-    const tempOptimizedPath = path.join(UPLOAD_DIR, `optimizing-${fileName}`);
+    const mp4Name = `${path.parse(fileName).name}.mp4`;
+    const finalVideoPath = path.join(UPLOAD_DIR, mp4Name);
+    const tempOptimizedPath = path.join(UPLOAD_DIR, `optimizing-${mp4Name}`);
     console.log(`[QUEUE-WORKER]: Starting video optimization for ${fileName} (job=${job.id}, mediaId=${mediaId})`);
 
     try {
@@ -86,13 +88,21 @@ const processMediaJob = async (job) => {
       });
 
       // Replace original with optimized version
-      await fs.rename(tempOptimizedPath, rawFilePath);
-      const outputStats = await fs.stat(rawFilePath);
+      await fs.rename(tempOptimizedPath, finalVideoPath);
+      if (finalVideoPath !== rawFilePath) {
+        try {
+          await fs.unlink(rawFilePath);
+        } catch {}
+      }
+      const outputStats = await fs.stat(finalVideoPath);
 
       // Update DB status
       await prisma.media.update({
         where: { id: mediaId },
-        data: { status: 'ready' }
+        data: {
+          url: `/uploads/${mp4Name}`,
+          status: 'ready',
+        }
       });
 
       console.log('[QUEUE-WORKER]: Successfully optimized video', {

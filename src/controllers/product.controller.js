@@ -173,8 +173,9 @@ export const createProduct = async (req, res, next) => {
       include: { media: { orderBy: { order: 'asc' } } },
     });
 
-    // Queue media processing jobs
+    // Queue background jobs only for files that still need processing.
     for (const m of mediaResults) {
+      if (!m.shouldQueueProcessing) continue;
       const mediaRecord = product.media.find(rm => rm.url === m.url);
       if (mediaRecord) {
         const jobName = m.type === 'video' ? 'optimize-video' : 'optimize-image';
@@ -365,8 +366,9 @@ export const updateProduct = async (req, res, next) => {
       include: { media: { orderBy: { order: 'asc' } } },
     });
 
-    // Queue media processing jobs for new media
+    // Queue background jobs only for files that still need processing.
     for (const m of mediaResults) {
+      if (!m.shouldQueueProcessing) continue;
       const mediaRecord = updatedProduct.media.find(rm => rm.url === m.url);
       if (mediaRecord) {
         const jobName = m.type === 'video' ? 'optimize-video' : 'optimize-image';

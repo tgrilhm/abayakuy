@@ -15,10 +15,17 @@ import { requireAuth } from '../middlewares/auth.middleware.js';
 import { uploadMiddleware } from '../middlewares/upload.middleware.js';
 
 const router = Router();
+const VIDEO_MIME_TYPES = {
+  '.mp4': 'video/mp4',
+  '.webm': 'video/webm',
+  '.mov': 'video/quicktime',
+};
 
 // Video Streaming Route (handles byte-range requests)
 router.get('/stream/:filename', (req, res) => {
   const filePath = path.join(process.cwd(), 'uploads', req.params.filename);
+  const fileExt = path.extname(filePath).toLowerCase();
+  const contentType = VIDEO_MIME_TYPES[fileExt] || 'application/octet-stream';
   
   if (!fs.existsSync(filePath)) {
     return res.status(404).json({ error: 'Video not found' });
@@ -39,13 +46,13 @@ router.get('/stream/:filename', (req, res) => {
       'Content-Range': `bytes ${start}-${end}/${fileSize}`,
       'Accept-Ranges': 'bytes',
       'Content-Length': chunkSize,
-      'Content-Type': 'video/mp4',
+      'Content-Type': contentType,
     });
     file.pipe(res);
   } else {
     res.writeHead(200, {
       'Content-Length': fileSize,
-      'Content-Type': 'video/mp4',
+      'Content-Type': contentType,
     });
     fs.createReadStream(filePath).pipe(res);
   }

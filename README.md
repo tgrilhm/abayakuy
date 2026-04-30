@@ -27,12 +27,14 @@ A production-ready web application for managing an abaya product catalog.
    - `ADMIN_USER` and `ADMIN_PASS`: admin login credentials
    - `JWT_SECRET`: secure random string for JWT signing
    - `VIDEO_WORKER_CONCURRENCY`: optional queue worker concurrency, default `1` for small VPS instances
+   - `VIDEO_PROCESSING_MODE`: `passthrough` to publish raw videos immediately, `transcode` to keep background ffmpeg processing
+   - `MAX_VIDEO_UPLOAD_MB`: practical VPS-side size cap for uploaded videos
 
 ### 3. Storage And Processing
 1. The app writes uploaded images and videos to `uploads/`.
 2. Mount that directory to persistent storage in production.
 3. Images are converted to `.webp` in the background.
-4. Videos are transcoded to H.264 MP4 in the background.
+4. Videos can either publish immediately in raw form or be transcoded in the background, depending on `VIDEO_PROCESSING_MODE`.
 5. Check `GET /api/health` to verify Redis, queue counts, and upload directory access.
 
 ### 4. Install and Initialize
@@ -70,7 +72,8 @@ Local URLs:
 2. Make sure `./uploads` is mounted to `/app/uploads` for persistence.
 3. Keep Redis reachable from the backend container.
 4. Start with `VIDEO_WORKER_CONCURRENCY=1` on small VPS instances.
-5. Verify `https://your-domain/api/health` after deployment.
+5. Use `VIDEO_PROCESSING_MODE=passthrough` if admin upload speed matters more than aggressive video compression.
+6. Verify `https://your-domain/api/health` after deployment.
 
 ### 8. Production Checklist
 - Set `DATABASE_URL` and `REDIS_URL`.

@@ -815,6 +815,9 @@ export const AdminProductList: React.FC<AdminProductListProps> = ({ products, lo
                     >
                       <Upload size={18} className="group-hover:scale-110 transition-transform duration-200" />
                       <span className="font-sans text-[11px] tracking-[0.1em] uppercase">Click to upload photos or videos</span>
+                      <span className="font-sans text-[10px] normal-case tracking-normal text-stone-400">
+                        Videos publish immediately. Supported formats: MP4, WebM, MOV.
+                      </span>
                     </button>
                   </div>
 
